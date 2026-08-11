@@ -1,5 +1,5 @@
 import React from 'react';
-import { Code2, Heart } from 'lucide-react';
+import { Code2 } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
