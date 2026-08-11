@@ -25,6 +25,7 @@ export type CategoriaDespesa =
   | 'Cartão de Crédito'
   | 'Investimentos'
   | 'Financiamento'
+  | 'Empréstimo'
   | 'Outros';
 
 export type CategoriaReceita =
