@@ -13,17 +13,28 @@ interface SecaoGraficosProps {
   transacoes: Transacao[];
 }
 
-type TipoGrafico = "gastos_tipo" | "receitas_cat" | "despesas_cat" | "despesas_desc";
+type TipoGrafico =
+  | "gastos_tipo"
+  | "receitas_cat"
+  | "receitas_desc"
+  | "despesas_cat"
+  | "despesas_desc";
 
 const CORES = [
-  "#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6",
-  "#ec4899", "#14b8a6", "#f97316", "#06b6d4", "#a855f7",
+  "#3b82f6",
+  "#8b5cf6",
+  "#10b981",
+  "#f59e0b",
+  "#ef4444",
+  "#ec4899",
+  "#14b8a6",
+  "#f97316",
 ];
 
 export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
-  const [graficoSelecionado, setGraficoSelecionado] = useState<TipoGrafico>("gastos_tipo");
+  const [graficoSelecionado, setGraficoSelecionado] =
+    useState<TipoGrafico>("gastos_tipo");
 
-  // 1. Dados: Gastos Fixos vs Variáveis
   const dadosGastosTipo = useMemo(() => {
     let fixos = 0;
     let variaveis = 0;
@@ -31,9 +42,17 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
     transacoes
       .filter((t) => t.tipo === "despesa")
       .forEach((t) => {
-        const tipoGasto = t.tipoGasto?.toLowerCase();
-        if (tipoGasto === "fixo") fixos += t.valor;
-        else variaveis += t.valor;
+        const valorPropriedade = String(
+          t.tipoGasto ?? t.tipogasto ?? t.tipo_gasto ?? ""
+        )
+          .trim()
+          .toLowerCase();
+
+        if (valorPropriedade.includes("fixo")) {
+          fixos += Number(t.valor);
+        } else {
+          variaveis += Number(t.valor);
+        }
       });
 
     const total = fixos + variaveis;
@@ -45,57 +64,62 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
     ].filter((item) => item.value > 0);
   }, [transacoes]);
 
-  // 2. Dados: Receitas por Categoria
   const dadosReceitasCat = useMemo(() => {
     const mapa: Record<string, number> = {};
-
     transacoes
       .filter((t) => t.tipo === "receita")
       .forEach((t) => {
         const cat = t.categoria || "Outros";
-        mapa[cat] = (mapa[cat] || 0) + t.valor;
+        mapa[cat] = (mapa[cat] || 0) + Number(t.valor);
       });
-
     return Object.entries(mapa).map(([name, value]) => ({ name, value }));
   }, [transacoes]);
 
-  // 3. Dados: Despesas por Categoria
+  const dadosReceitasDesc = useMemo(() => {
+    const mapa: Record<string, number> = {};
+    transacoes
+      .filter((t) => t.tipo === "receita")
+      .forEach((t) => {
+        const desc = t.descricao || "Sem Descrição";
+        mapa[desc] = (mapa[desc] || 0) + Number(t.valor);
+      });
+    return Object.entries(mapa)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [transacoes]);
+
   const dadosDespesasCat = useMemo(() => {
     const mapa: Record<string, number> = {};
-
     transacoes
       .filter((t) => t.tipo === "despesa")
       .forEach((t) => {
         const cat = t.categoria || "Outros";
-        mapa[cat] = (mapa[cat] || 0) + t.valor;
+        mapa[cat] = (mapa[cat] || 0) + Number(t.valor);
       });
-
     return Object.entries(mapa).map(([name, value]) => ({ name, value }));
   }, [transacoes]);
 
-  // 4. Dados: Despesas por Descrição
   const dadosDespesasDesc = useMemo(() => {
     const mapa: Record<string, number> = {};
-
     transacoes
       .filter((t) => t.tipo === "despesa")
       .forEach((t) => {
         const desc = t.descricao || "Sem Descrição";
-        mapa[desc] = (mapa[desc] || 0) + t.valor;
+        mapa[desc] = (mapa[desc] || 0) + Number(t.valor);
       });
-
     return Object.entries(mapa)
       .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value); // Ordena do maior para o menor
+      .sort((a, b) => b.value - a.value);
   }, [transacoes]);
 
-  // Define qual conjunto de dados utilizar no gráfico visível
   const dadosAtuais = useMemo(() => {
     switch (graficoSelecionado) {
       case "gastos_tipo":
         return dadosGastosTipo;
       case "receitas_cat":
         return dadosReceitasCat;
+      case "receitas_desc":
+        return dadosReceitasDesc;
       case "despesas_cat":
         return dadosDespesasCat;
       case "despesas_desc":
@@ -107,6 +131,7 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
     graficoSelecionado,
     dadosGastosTipo,
     dadosReceitasCat,
+    dadosReceitasDesc,
     dadosDespesasCat,
     dadosDespesasDesc,
   ]);
@@ -118,28 +143,29 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
 
   return (
     <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 mb-6 shadow-md shadow-slate-950/30">
-      {/* Controles do Seletor */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 border-b border-slate-800 pb-4">
         <div>
           <h2 className="text-base font-semibold text-white">Análise Gráfica</h2>
           <p className="text-xs text-slate-400">
-            Selecione o tipo de visualização desejado
+            Selecione a visualização desejada
           </p>
         </div>
 
         <select
           value={graficoSelecionado}
-          onChange={(e) => setGraficoSelecionado(e.target.value as TipoGrafico)}
+          onChange={(e) =>
+            setGraficoSelecionado(e.target.value as TipoGrafico)
+          }
           className="bg-slate-950 border border-slate-700/80 text-slate-200 text-xs rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer w-full sm:w-auto font-medium"
         >
           <option value="gastos_tipo">Gastos Fixos vs Variáveis (%)</option>
           <option value="receitas_cat">Receitas por Categoria (%)</option>
+          <option value="receitas_desc">Receitas por Descrição (%)</option>
           <option value="despesas_cat">Despesas por Categoria (%)</option>
           <option value="despesas_desc">Despesas por Descrição (%)</option>
         </select>
       </div>
 
-      {/* ÁREA DO GRÁFICO */}
       {dadosAtuais.length === 0 ? (
         <div className="h-64 flex items-center justify-center text-xs text-slate-500">
           Nenhum dado disponível para o gráfico selecionado neste período.
@@ -156,7 +182,9 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
                 outerRadius={100}
                 paddingAngle={4}
                 dataKey="value"
-                label={({ percent = 0 }) => `${(percent * 100).toFixed(1)}%`}
+                label={({ percent }: { percent?: number }) =>
+                  `${((percent ?? 0) * 100).toFixed(1)}%`
+                }
               >
                 {dadosAtuais.map((_, index) => (
                   <Cell
@@ -166,16 +194,13 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value) => {
-                  const numericValue = Number(
-                    Array.isArray(value) ? value[0] : value ?? 0
-                  );
-
+                formatter={(value: any) => {
+                  const valNum = Number(value ?? 0);
                   return [
-                    `R$ ${numericValue.toLocaleString("pt-BR", {
+                    `R$ ${valNum.toLocaleString("pt-BR", {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
-                    })} (${((numericValue / (totalValor || 1)) * 100).toFixed(1)}%)`,
+                    })} (${((valNum / (totalValor || 1)) * 100).toFixed(1)}%)`,
                     "Valor",
                   ];
                 }}

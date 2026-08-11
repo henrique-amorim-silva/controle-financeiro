@@ -1,5 +1,5 @@
-export type TipoTransacao = 'receita' | 'despesa';
-export type TipoGasto = 'fixo' | 'variavel';
+export type TipoTransacao = 'receita' | 'despesa' | string;
+export type TipoGasto = 'fixo' | 'variavel' | string;
 
 // Nova tipagem para Bancos / Contas
 export type Banco =
@@ -44,6 +44,8 @@ export interface Transacao {
   data: string;
   pago: boolean;
   tipoGasto?: TipoGasto;
+  tipogasto?: TipoGasto;
+  tipo_gasto?: TipoGasto;
 }
 
 export interface ResumoFinanceiro {

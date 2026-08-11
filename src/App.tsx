@@ -20,7 +20,6 @@ const API_URL = (
     : `https://${rawUrl}`
 ).replace(/\/$/, "");
 
-// Auxiliar para busca sem acentos e sem diferenciação de maiúsculas/minúsculas
 const normalizarTexto = (texto: string) =>
   texto
     .normalize("NFD")
@@ -28,9 +27,8 @@ const normalizarTexto = (texto: string) =>
     .toLowerCase();
 
 export default function App() {
-  // 1. Estados de Autenticação
   const [token, setToken] = useState<string | null>(() =>
-    localStorage.getItem("token"),
+    localStorage.getItem("token")
   );
   const [usuario, setUsuario] = useState<{
     nome: string;
@@ -40,15 +38,12 @@ export default function App() {
     return usuarioSalvo ? JSON.parse(usuarioSalvo) : null;
   });
 
-  // 2. Estados da Aplicação
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
-
-  // Filtro exclusivo por Mês para o Dashboard e Gráficos
   const [mesFiltro, setMesFiltro] = useState<string>("2026-08");
 
-  // Filtros avançados para o Histórico de Lançamentos
   const [filtros, setFiltros] = useState<FiltrosState>({
     tipo: "todos",
+    tipoGasto: "todos",
     status: "todos",
     descricao: "",
     banco: "todos",
@@ -58,10 +53,13 @@ export default function App() {
   });
 
   const normalizarTransacao = (transacao: any): Transacao => {
+    const tipoGastoBruto =
+      transacao.tipoGasto ?? transacao.tipogasto ?? transacao.tipo_gasto ?? "";
+
     return {
       ...transacao,
       valor: Number(String(transacao.valor ?? 0).replace(",", ".")),
-      tipoGasto: transacao.tipoGasto ?? transacao.tipogasto ?? undefined,
+      tipoGasto: String(tipoGastoBruto).trim().toLowerCase(),
       id: String(transacao.id ?? ""),
       data: String(transacao.data ?? ""),
     };
@@ -77,7 +75,7 @@ export default function App() {
 
   const fetchAutenticado = async (
     endpoint: string,
-    options: RequestInit = {},
+    options: RequestInit = {}
   ) => {
     const headers = {
       "Content-Type": "application/json",
@@ -99,7 +97,6 @@ export default function App() {
     return response;
   };
 
-  // 3. Carregar dados do backend
   useEffect(() => {
     if (!token) return;
 
@@ -113,7 +110,6 @@ export default function App() {
       .catch((err) => console.error("Erro ao carregar transações:", err));
   }, [token]);
 
-  // 4. Listas dinâmicas de Bancos e Categorias
   const bancosUnicos = useMemo(() => {
     if (!Array.isArray(transacoes)) return [];
     const lista = transacoes.map((t) => t.banco).filter(Boolean);
@@ -126,7 +122,6 @@ export default function App() {
     return Array.from(new Set(lista));
   }, [transacoes]);
 
-  // 5. Filtro por Mês (Para Métricas e Gráficos)
   const transacoesMetricasGerais = useMemo(() => {
     if (!Array.isArray(transacoes)) return [];
     return transacoes.filter((t) => {
@@ -135,7 +130,6 @@ export default function App() {
     });
   }, [transacoes, mesFiltro]);
 
-  // 6. Filtro Avançado Combinado (Para o Histórico)
   const transacoesFiltradasHistorico = useMemo(() => {
     if (!Array.isArray(transacoes)) return [];
 
@@ -149,13 +143,36 @@ export default function App() {
 
       if (filtros.tipo !== "todos" && t.tipo !== filtros.tipo) return false;
 
+      // Filtro de Fixos vs Variáveis
+      if (filtros.tipoGasto !== "todos") {
+        if (t.tipo !== "despesa") return false;
+        const tipoGastoItem = String(
+          t.tipoGasto ?? t.tipogasto ?? t.tipo_gasto ?? ""
+        )
+          .trim()
+          .toLowerCase();
+
+        if (
+          filtros.tipoGasto === "fixo" &&
+          !tipoGastoItem.includes("fixo")
+        ) {
+          return false;
+        }
+        if (
+          filtros.tipoGasto === "variavel" &&
+          tipoGastoItem.includes("fixo")
+        ) {
+          return false;
+        }
+      }
+
       if (filtros.status === "pago" && !t.pago) return false;
       if (filtros.status === "pendente" && t.pago) return false;
 
       if (
         filtros.descricao.trim() !== "" &&
         !normalizarTexto(t.descricao).includes(
-          normalizarTexto(filtros.descricao),
+          normalizarTexto(filtros.descricao)
         )
       ) {
         return false;
@@ -177,6 +194,7 @@ export default function App() {
   const handleLimparFiltrosHistorico = () => {
     setFiltros({
       tipo: "todos",
+      tipoGasto: "todos",
       status: "todos",
       descricao: "",
       banco: "todos",
@@ -186,9 +204,8 @@ export default function App() {
     });
   };
 
-  // 7. Manipulação CRUD
   const handleAdicionarTransacao = async (
-    novaTransacao: Omit<Transacao, "id">,
+    novaTransacao: Omit<Transacao, "id">
   ) => {
     try {
       const response = await fetchAutenticado("/transacoes", {
@@ -202,7 +219,7 @@ export default function App() {
         alert(
           `Erro ao salvar transação: ${
             data.erro || data.mensagem || "Falha no servidor"
-          }`,
+          }`
         );
         return;
       }
@@ -239,7 +256,7 @@ export default function App() {
 
       if (response.ok) {
         setTransacoes((prev) =>
-          prev.map((t) => (t.id === id ? { ...t, pago: !t.pago } : t)),
+          prev.map((t) => (t.id === id ? { ...t, pago: !t.pago } : t))
         );
       }
     } catch (err) {
@@ -247,7 +264,6 @@ export default function App() {
     }
   };
 
-  // 8. Tela de Login se deslogado
   if (!token) {
     return (
       <Login
@@ -266,7 +282,6 @@ export default function App() {
       <Header />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Identificação de Usuário e Logout */}
         <div className="bg-slate-900/70 border border-slate-800 p-4 rounded-2xl mb-6 flex items-center justify-between shadow-sm shadow-slate-950/20">
           <div>
             <p className="text-xs text-slate-400">Usuário Autenticado</p>
@@ -282,7 +297,6 @@ export default function App() {
           </button>
         </div>
 
-        {/* Mês de Referência Geral (Cards, Métricas e Gráficos) */}
         <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md shadow-slate-950/20">
           <div>
             <h2 className="text-sm font-semibold text-white">
@@ -310,17 +324,13 @@ export default function App() {
           </div>
         </div>
 
-        {/* Resumo e Saldos por Banco */}
         <DashboardResumo transacoes={transacoesMetricasGerais} />
         <SaldosPorBanco transacoes={transacoes} />
 
-        {/* Seção de Gráficos Dinâmicos */}
         <SecaoGraficos transacoes={transacoesMetricasGerais} />
 
-        {/* Adicionar Transação */}
         <FormularioTransacao onAdicionarTransacao={handleAdicionarTransacao} />
 
-        {/* Histórico de Lançamentos com Filtros Avançados e Paginação */}
         <div className="mt-8">
           <FiltrosTransacao
             filtros={filtros}

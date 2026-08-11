@@ -2,6 +2,7 @@ import React, { useState } from "react";
 
 export interface FiltrosState {
   tipo: "todos" | "despesa" | "receita";
+  tipoGasto: "todos" | "fixo" | "variavel";
   status: "todos" | "pago" | "pendente";
   descricao: string;
   banco: string;
@@ -29,6 +30,7 @@ export const FiltrosTransacao: React.FC<FiltrosProps> = ({
 
   const temFiltroAtivo =
     filtros.tipo !== "todos" ||
+    filtros.tipoGasto !== "todos" ||
     filtros.status !== "todos" ||
     filtros.descricao !== "" ||
     filtros.banco !== "todos" ||
@@ -38,7 +40,6 @@ export const FiltrosTransacao: React.FC<FiltrosProps> = ({
 
   return (
     <div className="bg-slate-900/80 border border-slate-800 rounded-2xl mb-4 shadow-md shadow-slate-950/30 overflow-hidden transition-all">
-      {/* Cabeçalho Clicável */}
       <div
         onClick={() => setIsAberto(!isAberto)}
         className="w-full p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800/50 transition-colors select-none"
@@ -90,11 +91,10 @@ export const FiltrosTransacao: React.FC<FiltrosProps> = ({
         </div>
       </div>
 
-      {/* Conteúdo Expansível */}
       {isAberto && (
         <div className="p-5 border-t border-slate-800/80 bg-slate-950/40 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-            {/* Filtro por Descrição */}
+            {/* Descrição */}
             <div>
               <label className="block text-slate-400 mb-1 font-medium">
                 Descrição
@@ -110,7 +110,7 @@ export const FiltrosTransacao: React.FC<FiltrosProps> = ({
               />
             </div>
 
-            {/* Filtro por Tipo */}
+            {/* Tipo */}
             <div>
               <label className="block text-slate-400 mb-1 font-medium">
                 Tipo
@@ -131,7 +131,28 @@ export const FiltrosTransacao: React.FC<FiltrosProps> = ({
               </select>
             </div>
 
-            {/* Filtro por Status */}
+            {/* Classificação do Gasto */}
+            <div>
+              <label className="block text-slate-400 mb-1 font-medium">
+                Classificação (Gasto)
+              </label>
+              <select
+                value={filtros.tipoGasto}
+                onChange={(e) =>
+                  setFiltros((prev) => ({
+                    ...prev,
+                    tipoGasto: e.target.value as "todos" | "fixo" | "variavel",
+                  }))
+                }
+                className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-emerald-500 outline-none cursor-pointer"
+              >
+                <option value="todos">Todos (Fixos e Variáveis)</option>
+                <option value="fixo">Apenas Gastos Fixos</option>
+                <option value="variavel">Apenas Gastos Variáveis</option>
+              </select>
+            </div>
+
+            {/* Status */}
             <div>
               <label className="block text-slate-400 mb-1 font-medium">
                 Status
@@ -152,7 +173,7 @@ export const FiltrosTransacao: React.FC<FiltrosProps> = ({
               </select>
             </div>
 
-            {/* Filtro por Banco */}
+            {/* Banco */}
             <div>
               <label className="block text-slate-400 mb-1 font-medium">
                 Banco / Conta
@@ -173,7 +194,7 @@ export const FiltrosTransacao: React.FC<FiltrosProps> = ({
               </select>
             </div>
 
-            {/* Filtro por Categoria */}
+            {/* Categoria */}
             <div>
               <label className="block text-slate-400 mb-1 font-medium">
                 Categoria
@@ -194,7 +215,7 @@ export const FiltrosTransacao: React.FC<FiltrosProps> = ({
               </select>
             </div>
 
-            {/* Filtro por Data Inicial */}
+            {/* Data Inicio */}
             <div>
               <label className="block text-slate-400 mb-1 font-medium">
                 Data Inicial
@@ -212,7 +233,7 @@ export const FiltrosTransacao: React.FC<FiltrosProps> = ({
               />
             </div>
 
-            {/* Filtro por Data Final */}
+            {/* Data Fim */}
             <div>
               <label className="block text-slate-400 mb-1 font-medium">
                 Data Final
