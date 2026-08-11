@@ -7,6 +7,7 @@ import type { Transacao } from "./types/finance";
 import { Footer } from "./components/Footer";
 import { SaldosPorBanco } from "./components/SaldosPorBanco";
 import { Login } from "./components/Login";
+import { SecaoGraficos } from "./components/SecaoGraficos";
 import {
   FiltrosTransacao,
   type FiltrosState,
@@ -19,7 +20,7 @@ const API_URL = (
     : `https://${rawUrl}`
 ).replace(/\/$/, "");
 
-// Auxiliar para busca sem acentos e sem diferenciação de maiúsculas
+// Auxiliar para busca sem acentos e sem diferenciação de maiúsculas/minúsculas
 const normalizarTexto = (texto: string) =>
   texto
     .normalize("NFD")
@@ -42,7 +43,7 @@ export default function App() {
   // 2. Estados da Aplicação
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
 
-  // Filtro exclusivo por Mês para o Dashboard
+  // Filtro exclusivo por Mês para o Dashboard e Gráficos
   const [mesFiltro, setMesFiltro] = useState<string>("2026-08");
 
   // Filtros avançados para o Histórico de Lançamentos
@@ -125,7 +126,7 @@ export default function App() {
     return Array.from(new Set(lista));
   }, [transacoes]);
 
-  // 5. Filtro por Mês (Apenas para as Métricas do Dashboard)
+  // 5. Filtro por Mês (Para Métricas e Gráficos)
   const transacoesMetricasGerais = useMemo(() => {
     if (!Array.isArray(transacoes)) return [];
     return transacoes.filter((t) => {
@@ -134,12 +135,11 @@ export default function App() {
     });
   }, [transacoes, mesFiltro]);
 
-  // 6. Filtro Avançado Combinado (Para o Histórico de Lançamentos)
+  // 6. Filtro Avançado Combinado (Para o Histórico)
   const transacoesFiltradasHistorico = useMemo(() => {
     if (!Array.isArray(transacoes)) return [];
 
     return transacoes.filter((t) => {
-      // Mantém no escopo do mês selecionado acima se não houver intervalo de datas específico
       if (mesFiltro && !filtros.dataInicio && !filtros.dataFim) {
         if (!t?.data?.startsWith(mesFiltro)) return false;
       }
@@ -282,14 +282,14 @@ export default function App() {
           </button>
         </div>
 
-        {/* Mês de Referência Geral (Cards e Métricas) */}
+        {/* Mês de Referência Geral (Cards, Métricas e Gráficos) */}
         <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md shadow-slate-950/20">
           <div>
             <h2 className="text-sm font-semibold text-white">
               Métricas Gerais por Mês
             </h2>
             <p className="text-xs text-slate-400">
-              Selecione o mês de referência para o resumo
+              Selecione o mês de referência para o resumo e gráficos
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -310,14 +310,17 @@ export default function App() {
           </div>
         </div>
 
-        {/* Resumo e Bancos */}
+        {/* Resumo e Saldos por Banco */}
         <DashboardResumo transacoes={transacoesMetricasGerais} />
         <SaldosPorBanco transacoes={transacoes} />
+
+        {/* Seção de Gráficos Dinâmicos */}
+        <SecaoGraficos transacoes={transacoesMetricasGerais} />
 
         {/* Adicionar Transação */}
         <FormularioTransacao onAdicionarTransacao={handleAdicionarTransacao} />
 
-        {/* Histórico com Filtros Avançados Expansíveis */}
+        {/* Histórico de Lançamentos com Filtros Avançados e Paginação */}
         <div className="mt-8">
           <FiltrosTransacao
             filtros={filtros}
