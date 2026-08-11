@@ -9,9 +9,11 @@ import { SaldosPorBanco } from "./components/SaldosPorBanco";
 import { Login } from "./components/Login";
 
 const rawUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-const API_URL = (rawUrl.startsWith("http://") || rawUrl.startsWith("https://") 
-  ? rawUrl 
-  : `https://${rawUrl}`).replace(/\/$/, "");
+const API_URL = (
+  rawUrl.startsWith("http://") || rawUrl.startsWith("https://")
+    ? rawUrl
+    : `https://${rawUrl}`
+).replace(/\/$/, "");
 
 export default function App() {
   // 1. Estados de Autenticação
@@ -133,10 +135,12 @@ export default function App() {
   }
 
   // Filtrar transações com base no mês selecionado
-  const transacoesFiltradas = transacoes.filter((t) => {
-    if (!mesFiltro) return true;
-    return t.data.startsWith(mesFiltro);
-  });
+  const transacoesFiltradas = Array.isArray(transacoes)
+    ? transacoes.filter((t) => {
+        if (!mesFiltro) return true;
+        return t?.data ? t.data.startsWith(mesFiltro) : false;
+      })
+    : [];
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900 text-slate-100 font-sans antialiased">
