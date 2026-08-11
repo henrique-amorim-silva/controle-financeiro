@@ -8,7 +8,10 @@ import { Footer } from "./components/Footer";
 import { SaldosPorBanco } from "./components/SaldosPorBanco";
 import { Login } from "./components/Login";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const rawUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_URL = (rawUrl.startsWith("http://") || rawUrl.startsWith("https://") 
+  ? rawUrl 
+  : `https://${rawUrl}`).replace(/\/$/, "");
 
 export default function App() {
   // 1. Estados de Autenticação

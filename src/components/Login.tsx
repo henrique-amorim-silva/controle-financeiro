@@ -11,7 +11,10 @@ export const Login: React.FC<LoginProps> = ({ onLoginSucesso }) => {
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const API_URL = (rawUrl.startsWith('http://') || rawUrl.startsWith('https://') 
+    ? rawUrl 
+    : `https://${rawUrl}`).replace(/\/$/, "");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +26,10 @@ export const Login: React.FC<LoginProps> = ({ onLoginSucesso }) => {
     try {
       const res = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true' // Bypassa a tela de aviso do Ngrok
+        },
         body: JSON.stringify(body),
       });
 
