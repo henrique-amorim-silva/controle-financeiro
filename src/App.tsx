@@ -29,30 +29,59 @@ export default function App() {
   const [mesFiltro, setMesFiltro] = useState<string>('2026-08');
 
   // 2. Salva no LocalStorage sempre que a lista de transações mudar
-  useEffect(() => {
-    localStorage.setItem('@finance_app_transacoes', JSON.stringify(transacoes));
-  }, [transacoes]);
+useEffect(() => {
+  fetch(`${API_URL}/transacoes`)
+    .then((res) => res.json())
+    .then((data) => setTransacoes(data))
+    .catch((err) => console.error('Erro ao carregar transações:', err));
+}, []);
 
   // Funções de manipulação (CRUD)
-  const handleAdicionarTransacao = (novaTransacao: Omit<Transacao, 'id'>) => {
-    const itemCompleto: Transacao = {
-      ...novaTransacao,
-      id: crypto.randomUUID(),
-    };
-    setTransacoes((prev) => [itemCompleto, ...prev]);
-  };
+  const handleAdicionarTransacao = async (novaTransacao: Omit<Transacao, 'id'>) => {
+  try {
+    const response = await fetch(`${API_URL}/transacoes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(novaTransacao),
+    });
+    const transacaoSalva: Transacao = await response.json();
+    setTransacoes((prev) => [transacaoSalva, ...prev]);
+  } catch (err) {
+    console.error('Erro ao salvar transação:', err);
+  }
+};
 
-  const handleDeletarTransacao = (id: string) => {
-    setTransacoes((prev) => prev.filter((item) => item.id !== id));
-  };
+  const handleDeletarTransacao = async (id: string) => {
+  try {
+    await fetch(`${API_URL}/transacoes/${id}`, {
+      method: 'DELETE',
+    });
+    setTransacoes((prev) => prev.filter((t) => t.id !== id));
+  } catch (err) {
+    console.error('Erro ao deletar transação:', err);
+  }
+};
 
-  const handleAlternarPago = (id: string) => {
+  const handleAlternarPago = async (id: string) => {
+  try {
+    const transacaoAtual = transacoes.find((t) => t.id === id);
+    if (!transacaoAtual) return;
+
+    await fetch(`${API_URL}/transacoes/${id}/pago`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pago: !transacaoAtual.pago }),
+    });
+
     setTransacoes((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, pago: !item.pago } : item
+      prev.map((t) =>
+        t.id === id ? { ...t, pago: !t.pago } : t
       )
     );
-  };
+  } catch (err) {
+    console.error('Erro ao atualizar status:', err);
+  }
+};
 
   // Filtrar transações com base no mês selecionado
   const transacoesFiltradas = transacoes.filter((t) => {
