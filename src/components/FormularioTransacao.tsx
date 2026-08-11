@@ -11,23 +11,37 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
   const [valor, setValor] = useState('');
   const [tipo, setTipo] = useState<'receita' | 'despesa'>('despesa');
   const [tipoGasto, setTipoGasto] = useState<'fixo' | 'variavel'>('variavel');
-  const [categoria, setCategoria] = useState('Alimentação');
+  const [categoria, setCategoria] = useState('Moradia');
   const [banco, setBanco] = useState('Nubank');
   const [pago, setPago] = useState(true);
   const [data, setData] = useState(new Date().toISOString().split('T')[0]);
 
-  const opcoesCategoria = [
-    'Alimentação',
+  const opcoesCategoriaDespesa = [
     'Moradia',
+    'Alimentação',
     'Transporte',
     'Saúde',
-    'Educação',
     'Lazer',
+    'Educação',
+    'Contas Fixas',
+    'Cartão de Crédito',
     'Investimentos',
-    'Salário',
-    'Freelance',
+    'Financiamento',
+    'Empréstimo',
     'Outros',
   ];
+
+  const opcoesCategoriaReceita = [
+    'Salário',
+    'Freelance',
+    'Rendimentos',
+    'Vendas',
+    'Saldo Inicial',
+    'Outros',
+  ];
+
+  const opcoesCategoria =
+    tipo === 'despesa' ? opcoesCategoriaDespesa : opcoesCategoriaReceita;
 
   const opcoesBanco = [
     'Nubank',
@@ -91,7 +105,7 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
     // Limpa o formulário mantendo os valores padrão
     setDescricao('');
     setValor('');
-    setCategoria('Alimentação');
+    setCategoria(tipo === 'despesa' ? 'Moradia' : 'Salário');
     setBanco('Nubank');
     setTipoGasto('variavel');
   };
@@ -109,7 +123,11 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
           </label>
           <select
             value={tipo}
-            onChange={(e) => setTipo(e.target.value as 'receita' | 'despesa')}
+            onChange={(e) => {
+              const novoTipo = e.target.value as 'receita' | 'despesa';
+              setTipo(novoTipo);
+              setCategoria(novoTipo === 'despesa' ? 'Moradia' : 'Salário');
+            }}
             className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
           >
             <option value="despesa">Despesa</option>
