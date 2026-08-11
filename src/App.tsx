@@ -1,41 +1,49 @@
-import { useState, useEffect } from 'react';
-import { Header } from './components/Header';
-import { DashboardResumo } from './components/DashboardResumo';
-import { FormularioTransacao } from './components/FormularioTransacao';
-import { ListaTransacoes } from './components/ListaTransacoes';
-import type { Transacao } from './types/finance';
-import { Footer } from './components/Footer';
-import { SaldosPorBanco } from './components/SaldosPorBanco';
-import { Login } from './components/Login';
+import { useState, useEffect } from "react";
+import { Header } from "./components/Header";
+import { DashboardResumo } from "./components/DashboardResumo";
+import { FormularioTransacao } from "./components/FormularioTransacao";
+import { ListaTransacoes } from "./components/ListaTransacoes";
+import type { Transacao } from "./types/finance";
+import { Footer } from "./components/Footer";
+import { SaldosPorBanco } from "./components/SaldosPorBanco";
+import { Login } from "./components/Login";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export default function App() {
   // 1. Estados de Autenticação
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
-  const [usuario, setUsuario] = useState<{ nome: string; email: string } | null>(() => {
-    const usuarioSalvo = localStorage.getItem('usuario');
+  const [token, setToken] = useState<string | null>(() =>
+    localStorage.getItem("token"),
+  );
+  const [usuario, setUsuario] = useState<{
+    nome: string;
+    email: string;
+  } | null>(() => {
+    const usuarioSalvo = localStorage.getItem("usuario");
     return usuarioSalvo ? JSON.parse(usuarioSalvo) : null;
   });
 
   // 2. Estados da Aplicação
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
-  const [mesFiltro, setMesFiltro] = useState<string>('2026-08');
+  const [mesFiltro, setMesFiltro] = useState<string>("2026-08");
 
   // Função para deslogar o usuário
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('usuario');
+    localStorage.removeItem("token");
+    localStorage.removeItem("usuario");
     setToken(null);
     setUsuario(null);
     setTransacoes([]);
   };
 
   // Função auxiliar para enviar requisições com o Token JWT
-  const fetchAutenticado = async (endpoint: string, options: RequestInit = {}) => {
+  const fetchAutenticado = async (
+    endpoint: string,
+    options: RequestInit = {},
+  ) => {
     const headers = {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     };
 
@@ -46,7 +54,7 @@ export default function App() {
 
     if (response.status === 401 || response.status === 403) {
       handleLogout();
-      throw new Error('Sessão expirada. Faça login novamente.');
+      throw new Error("Sessão expirada. Faça login novamente.");
     }
 
     return response;
@@ -56,34 +64,36 @@ export default function App() {
   useEffect(() => {
     if (!token) return;
 
-    fetchAutenticado('/transacoes')
+    fetchAutenticado("/transacoes")
       .then((res) => res.json())
       .then((data) => setTransacoes(data))
-      .catch((err) => console.error('Erro ao carregar transações:', err));
+      .catch((err) => console.error("Erro ao carregar transações:", err));
   }, [token]);
 
   // 4. Manipulação de Transações (CRUD)
-  const handleAdicionarTransacao = async (novaTransacao: Omit<Transacao, 'id'>) => {
+  const handleAdicionarTransacao = async (
+    novaTransacao: Omit<Transacao, "id">,
+  ) => {
     try {
-      const response = await fetchAutenticado('/transacoes', {
-        method: 'POST',
+      const response = await fetchAutenticado("/transacoes", {
+        method: "POST",
         body: JSON.stringify(novaTransacao),
       });
       const transacaoSalva: Transacao = await response.json();
       setTransacoes((prev) => [transacaoSalva, ...prev]);
     } catch (err) {
-      console.error('Erro ao salvar transação:', err);
+      console.error("Erro ao salvar transação:", err);
     }
   };
 
   const handleDeletarTransacao = async (id: string) => {
     try {
       await fetchAutenticado(`/transacoes/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
       setTransacoes((prev) => prev.filter((t) => t.id !== id));
     } catch (err) {
-      console.error('Erro ao deletar transação:', err);
+      console.error("Erro ao deletar transação:", err);
     }
   };
 
@@ -93,15 +103,15 @@ export default function App() {
       if (!transacaoAtual) return;
 
       await fetchAutenticado(`/transacoes/${id}/pago`, {
-        method: 'PATCH',
+        method: "PATCH",
         body: JSON.stringify({ pago: !transacaoAtual.pago }),
       });
 
       setTransacoes((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, pago: !t.pago } : t))
+        prev.map((t) => (t.id === id ? { ...t, pago: !t.pago } : t)),
       );
     } catch (err) {
-      console.error('Erro ao atualizar status:', err);
+      console.error("Erro ao atualizar status:", err);
     }
   };
 
@@ -110,8 +120,8 @@ export default function App() {
     return (
       <Login
         onLoginSucesso={(t, u) => {
-          localStorage.setItem('token', t);
-          localStorage.setItem('usuario', JSON.stringify(u));
+          localStorage.setItem("token", t);
+          localStorage.setItem("usuario", JSON.stringify(u));
           setToken(t);
           setUsuario(u);
         }}
@@ -134,7 +144,9 @@ export default function App() {
         <div className="bg-slate-800/50 border border-slate-700/50 p-4 rounded-2xl mb-6 flex items-center justify-between shadow-sm">
           <div>
             <p className="text-xs text-slate-400">Usuário Autenticado</p>
-            <h3 className="text-sm font-semibold text-emerald-400">{usuario?.nome}</h3>
+            <h3 className="text-sm font-semibold text-emerald-400">
+              {usuario?.nome}
+            </h3>
           </div>
           <button
             onClick={handleLogout}
@@ -147,8 +159,12 @@ export default function App() {
         {/* Barra de Filtro de Mês */}
         <div className="bg-white dark:bg-slate-900 border border-slate-800 p-4 rounded-2xl mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md">
           <div>
-            <h2 className="text-sm font-semibold text-white">Filtrar Período</h2>
-            <p className="text-xs text-slate-400">Selecione o mês de referência para análise</p>
+            <h2 className="text-sm font-semibold text-white">
+              Filtrar Período
+            </h2>
+            <p className="text-xs text-slate-400">
+              Selecione o mês de referência para análise
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <input
@@ -159,7 +175,7 @@ export default function App() {
             />
             {mesFiltro && (
               <button
-                onClick={() => setMesFiltro('')}
+                onClick={() => setMesFiltro("")}
                 className="text-xs text-slate-400 hover:text-slate-200 underline px-2 py-1 cursor-pointer"
               >
                 Ver Todos
