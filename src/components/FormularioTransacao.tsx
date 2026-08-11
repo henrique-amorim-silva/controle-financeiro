@@ -11,10 +11,53 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
   const [valor, setValor] = useState('');
   const [tipo, setTipo] = useState<'receita' | 'despesa'>('despesa');
   const [tipoGasto, setTipoGasto] = useState<'fixo' | 'variavel'>('variavel');
-  const [categoria, setCategoria] = useState('');
-  const [banco, setBanco] = useState('');
+  const [categoria, setCategoria] = useState('Alimentação');
+  const [banco, setBanco] = useState('Nubank');
   const [pago, setPago] = useState(true);
   const [data, setData] = useState(new Date().toISOString().split('T')[0]);
+
+  const opcoesCategoria = [
+    'Alimentação',
+    'Moradia',
+    'Transporte',
+    'Saúde',
+    'Educação',
+    'Lazer',
+    'Investimentos',
+    'Salário',
+    'Freelance',
+    'Outros',
+  ];
+
+  const opcoesBanco = [
+    'Nubank',
+    'Banco do Brasil',
+    'Caixa',
+    'Santander',
+    'Inter',
+    'Bradesco',
+    'Itaú',
+    'Mercado Pago',
+    'Outros',
+  ];
+
+  const handleValorChange = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    if (!digits) {
+      setValor('');
+      return;
+    }
+
+    const numericValue = Number(digits) / 100;
+    setValor(
+      new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(numericValue)
+    );
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +69,7 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
 
     // Tratamento de valor para número com ponto flutuante
     const valorNumerico = typeof valor === 'string'
-      ? parseFloat(valor.replace(',', '.'))
+      ? Number(valor.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.'))
       : Number(valor);
 
     // Monta o objeto de envio
@@ -48,8 +91,8 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
     // Limpa o formulário mantendo os valores padrão
     setDescricao('');
     setValor('');
-    setCategoria('');
-    setBanco('');
+    setCategoria('Alimentação');
+    setBanco('Nubank');
     setTipoGasto('variavel');
   };
 
@@ -60,33 +103,18 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="block text-xs font-medium text-slate-300">
-              Tipo de Transação
-            </label>
-            <select
-              value={tipo}
-              onChange={(e) => setTipo(e.target.value as 'receita' | 'despesa')}
-              className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-            >
-              <option value="despesa">Despesa</option>
-              <option value="receita">Receita</option>
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-xs font-medium text-slate-300">
-              Data
-            </label>
-            <input
-              type="date"
-              value={data}
-              onChange={(e) => setData(e.target.value)}
-              required
-              className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
+        <div className="space-y-2">
+          <label className="block text-xs font-medium text-slate-300">
+            Tipo de Transação
+          </label>
+          <select
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value as 'receita' | 'despesa')}
+            className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+          >
+            <option value="despesa">Despesa</option>
+            <option value="receita">Receita</option>
+          </select>
         </div>
 
         <div className="space-y-2">
@@ -111,8 +139,8 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
             <input
               type="text"
               value={valor}
-              onChange={(e) => setValor(e.target.value)}
-              placeholder="0,00"
+              onChange={(e) => handleValorChange(e.target.value)}
+              placeholder="R$ 0,00"
               required
               className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-emerald-500"
             />
@@ -142,27 +170,48 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
             <label className="block text-xs font-medium text-slate-300">
               Categoria
             </label>
-            <input
-              type="text"
+            <select
               value={categoria}
               onChange={(e) => setCategoria(e.target.value)}
-              placeholder="Ex: Alimentação, Moradia, Lazer..."
-              className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-emerald-500"
-            />
+              className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+            >
+              {opcoesCategoria.map((opcao) => (
+                <option key={opcao} value={opcao}>
+                  {opcao}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="space-y-2">
             <label className="block text-xs font-medium text-slate-300">
               Banco / Conta
             </label>
-            <input
-              type="text"
+            <select
               value={banco}
               onChange={(e) => setBanco(e.target.value)}
-              placeholder="Ex: Banco do Brasil, Nubank..."
-              className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-emerald-500"
-            />
+              className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+            >
+              {opcoesBanco.map((opcao) => (
+                <option key={opcao} value={opcao}>
+                  {opcao}
+                </option>
+              ))}
+            </select>
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-xs font-medium text-slate-300">
+            Data
+          </label>
+          <input
+            type="date"
+            value={data}
+            onChange={(e) => setData(e.target.value)}
+            required
+            className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
+          />
         </div>
 
         <div className="flex items-center gap-3 pt-1">
