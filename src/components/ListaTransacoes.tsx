@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import type { Transacao } from "../types/finance";
+import { formatarData } from "../utils/formatters";
 
 interface ListaTransacoesProps {
   transacoes: Transacao[];
@@ -78,7 +79,7 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
                     </button>
                   </td>
                   <td className="p-3 whitespace-nowrap text-slate-400">
-                    {t.data ? t.data.split("-").reverse().join("/") : "-"}
+                    {t.data ? formatarData(t.data) : "-"}
                   </td>
                   <td className="p-3 font-medium text-slate-100">
                     {t.descricao}
