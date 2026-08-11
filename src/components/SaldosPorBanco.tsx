@@ -32,18 +32,18 @@ export const SaldosPorBanco: React.FC<SaldosPorBancoProps> = ({ transacoes }) =>
   if (bancosComSaldo.length === 0) return null;
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm dark:shadow-md mb-8">
+    <div className="bg-slate-950 border border-slate-800 p-5 rounded-2xl shadow-sm shadow-slate-950/20 mb-8">
       {/* Cabeçalho e Total Geral */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-slate-200 dark:border-slate-800 gap-3">
-        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-slate-800 gap-3">
+        <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
           <Landmark className="w-4 h-4 text-emerald-500" />
           Saldo por Banco / Conta
         </h3>
 
         {/* Card em Destaque: Total do Patrimônio / Todos os Bancos */}
         <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3.5 py-1.5 rounded-xl self-start sm:self-auto">
-          <Wallet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+          <Wallet className="w-4 h-4 text-emerald-400" />
+          <span className="text-xs font-medium text-slate-200">
             Total em Contas:
           </span>
           <span
@@ -63,14 +63,14 @@ export const SaldosPorBanco: React.FC<SaldosPorBancoProps> = ({ transacoes }) =>
         {bancosComSaldo.map(([banco, saldo]) => (
           <div
             key={banco}
-            className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 p-3 rounded-xl"
+            className="bg-slate-900 border border-slate-700/60 p-3 rounded-xl"
           >
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 block truncate">
+            <span className="text-xs font-medium text-slate-400 block truncate">
               {banco}
             </span>
             <span
               className={`text-sm font-bold block mt-0.5 ${
-                saldo >= 0 ? 'text-slate-900 dark:text-slate-100' : 'text-rose-500'
+                saldo >= 0 ? 'text-slate-100' : 'text-rose-500'
               }`}
             >
               {formatarMoeda(saldo)}

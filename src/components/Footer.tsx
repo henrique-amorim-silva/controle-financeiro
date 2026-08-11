@@ -9,7 +9,7 @@ export const Footer: React.FC = () => {
           <Code2 className="w-4 h-4 text-emerald-400" />
           <span>FinanceApp desenvolvido com React, TypeScript & Tailwind CSS.</span>
         </div>
-        <div className="flex items-center gap-1 text-slate-500">
+        <div className="flex items-center gap-1 text-slate-400">
           <span>Feito com</span>
           <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
           <span>para o portfólio de programação.</span>

@@ -72,7 +72,11 @@ export default function App() {
 
     fetchAutenticado("/transacoes")
       .then((res) => res.json())
-      .then((data) => setTransacoes(data))
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setTransacoes(data);
+        }
+      })
       .catch((err) => console.error("Erro ao carregar transações:", err));
   }, [token]);
 
@@ -85,8 +89,16 @@ export default function App() {
         method: "POST",
         body: JSON.stringify(novaTransacao),
       });
-      const transacaoSalva: Transacao = await response.json();
-      setTransacoes((prev) => [transacaoSalva, ...prev]);
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(`Erro ao salvar transação: ${data.erro || data.mensagem || 'Falha no servidor'}`);
+        console.error("Erro detalhado do servidor:", data);
+        return;
+      }
+
+      setTransacoes((prev) => [data, ...prev]);
     } catch (err) {
       console.error("Erro ao salvar transação:", err);
     }
@@ -94,10 +106,13 @@ export default function App() {
 
   const handleDeletarTransacao = async (id: string) => {
     try {
-      await fetchAutenticado(`/transacoes/${id}`, {
+      const response = await fetchAutenticado(`/transacoes/${id}`, {
         method: "DELETE",
       });
-      setTransacoes((prev) => prev.filter((t) => t.id !== id));
+
+      if (response.ok) {
+        setTransacoes((prev) => prev.filter((t) => t.id !== id));
+      }
     } catch (err) {
       console.error("Erro ao deletar transação:", err);
     }
@@ -108,14 +123,16 @@ export default function App() {
       const transacaoAtual = transacoes.find((t) => t.id === id);
       if (!transacaoAtual) return;
 
-      await fetchAutenticado(`/transacoes/${id}/pago`, {
+      const response = await fetchAutenticado(`/transacoes/${id}/pago`, {
         method: "PATCH",
         body: JSON.stringify({ pago: !transacaoAtual.pago }),
       });
 
-      setTransacoes((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, pago: !t.pago } : t)),
-      );
+      if (response.ok) {
+        setTransacoes((prev) =>
+          prev.map((t) => (t.id === id ? { ...t, pago: !t.pago } : t)),
+        );
+      }
     } catch (err) {
       console.error("Erro ao atualizar status:", err);
     }
@@ -144,12 +161,12 @@ export default function App() {
     : [];
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-900 text-slate-100 font-sans antialiased">
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased">
       <Header />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Barra de Identificação do Usuário e Logout */}
-        <div className="bg-slate-800/50 border border-slate-700/50 p-4 rounded-2xl mb-6 flex items-center justify-between shadow-sm">
+        <div className="bg-slate-900/70 border border-slate-800 p-4 rounded-2xl mb-6 flex items-center justify-between shadow-sm shadow-slate-950/20">
           <div>
             <p className="text-xs text-slate-400">Usuário Autenticado</p>
             <h3 className="text-sm font-semibold text-emerald-400">
@@ -165,7 +182,7 @@ export default function App() {
         </div>
 
         {/* Barra de Filtro de Mês */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-800 p-4 rounded-2xl mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md">
+        <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md shadow-slate-950/20">
           <div>
             <h2 className="text-sm font-semibold text-white">
               Filtrar Período

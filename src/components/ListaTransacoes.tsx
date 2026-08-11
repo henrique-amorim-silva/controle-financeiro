@@ -16,23 +16,23 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
 }) => {
   if (transacoes.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-2xl text-center text-slate-500 dark:text-slate-400">
+      <div className="bg-slate-950 border border-slate-800 p-8 rounded-2xl text-center text-slate-300">
         Nenhuma transação registrada até o momento.
       </div>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm dark:shadow-xl">
-      <div className="p-5 border-b border-slate-200 dark:border-slate-800">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+    <div className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-sm shadow-slate-950/20">
+      <div className="p-5 border-b border-slate-800">
+        <h2 className="text-lg font-semibold text-slate-100">
           Histórico de Lançamentos
         </h2>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm text-slate-700 dark:text-slate-300">
-          <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 uppercase text-xs">
+        <table className="w-full text-left text-sm text-slate-300">
+          <thead className="bg-slate-900/80 text-slate-400 uppercase text-xs">
             <tr>
               <th className="py-3 px-4">Status</th>
               <th className="py-3 px-4">Descrição</th>
@@ -45,7 +45,7 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
             {transacoes.map((item) => (
-              <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+              <tr key={item.id} className="hover:bg-slate-900/60 transition-colors">
                 {/* Status */}
                 <td className="py-3.5 px-4">
                   <button
@@ -66,10 +66,10 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
                 </td>
 
                 {/* Descrição */}
-                <td className="py-3.5 px-4 font-medium text-slate-900 dark:text-white">
+                <td className="py-3.5 px-4 font-medium text-slate-100">
                   {item.descricao}
                   {item.tipoGasto && (
-                    <span className="ml-2 text-[10px] text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+                    <span className="ml-2 text-[10px] text-slate-300 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-700">
                       {item.tipoGasto}
                     </span>
                   )}
@@ -77,7 +77,7 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
 
                 {/* Banco / Conta */}
                 <td className="py-3.5 px-4">
-                  <span className="flex items-center gap-1 text-xs font-medium text-slate-600 dark:text-slate-300">
+                  <span className="flex items-center gap-1 text-xs font-medium text-slate-300">
                     <Landmark className="w-3.5 h-3.5 text-slate-400" />
                     {item.banco}
                   </span>
@@ -85,13 +85,13 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
 
                 {/* Categoria */}
                 <td className="py-3.5 px-4">
-                  <span className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs px-2.5 py-1 rounded-lg">
+                  <span className="bg-slate-900 text-slate-300 border border-slate-700 text-xs px-2.5 py-1 rounded-lg">
                     {item.categoria}
                   </span>
                 </td>
 
                 {/* Data */}
-                <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400">
+                <td className="py-3.5 px-4 text-slate-300">
                   {formatarData(item.data)}
                 </td>
 
@@ -110,7 +110,7 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
                 <td className="py-3.5 px-4 text-center">
                   <button
                     onClick={() => onDeletarTransacao(item.id)}
-                    className="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    className="text-slate-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-slate-900 transition-colors cursor-pointer"
                     title="Excluir lançamento"
                   >
                     <Trash2 className="w-4 h-4" />

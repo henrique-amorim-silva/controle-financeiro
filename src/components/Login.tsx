@@ -55,13 +55,13 @@ export const Login: React.FC<LoginProps> = ({ onLoginSucesso }) => {
   };
 
   return (
-    <div style={{ maxWidth: '380px', margin: '60px auto', padding: '24px', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', fontFamily: 'sans-serif' }}>
-      <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>
+    <div style={{ maxWidth: '380px', margin: '60px auto', padding: '24px', border: '1px solid #334155', borderRadius: '8px', backgroundColor: '#0f172a', boxShadow: '0 4px 14px rgba(15,23,42,0.7)', fontFamily: 'sans-serif', color: '#e2e8f0' }}>
+      <h2 style={{ textAlign: 'center', marginBottom: '20px', color: '#f8fafc' }}>
         {modoCadastro ? 'Criar Conta' : 'Controle Financeiro'}
       </h2>
 
       {erro && (
-        <div style={{ background: '#fee2e2', color: '#991b1b', padding: '10px', borderRadius: '4px', marginBottom: '15px', fontSize: '14px' }}>
+        <div style={{ background: '#7f1d1d', color: '#fee2e2', padding: '10px', borderRadius: '4px', marginBottom: '15px', fontSize: '14px' }}>
           {erro}
         </div>
       )}
@@ -69,49 +69,49 @@ export const Login: React.FC<LoginProps> = ({ onLoginSucesso }) => {
       <form onSubmit={handleSubmit}>
         {modoCadastro && (
           <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>Nome:</label>
+            <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', color: '#cbd5e1' }}>Nome:</label>
             <input
               type="text"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               required
-              style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
+              style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #475569', backgroundColor: '#0f172a', color: '#e2e8f0', boxSizing: 'border-box' }}
             />
           </div>
         )}
 
         <div style={{ marginBottom: '12px' }}>
-          <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>E-mail:</label>
+          <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', color: '#cbd5e1' }}>E-mail:</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #475569', backgroundColor: '#0f172a', color: '#e2e8f0', boxSizing: 'border-box' }}
           />
         </div>
 
         <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>Senha:</label>
+          <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', color: '#cbd5e1' }}>Senha:</label>
           <input
             type="password"
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
             required
-            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #475569', backgroundColor: '#0f172a', color: '#e2e8f0', boxSizing: 'border-box' }}
           />
         </div>
 
         <button
           type="submit"
-          style={{ width: '100%', padding: '10px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+          style={{ width: '100%', padding: '10px', backgroundColor: '#16a34a', color: '#f8fafc', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
         >
           {modoCadastro ? 'Cadastrar' : 'Entrar'}
         </button>
       </form>
 
       <p
-        style={{ marginTop: '16px', textAlign: 'center', cursor: 'pointer', color: '#2563eb', fontSize: '14px' }}
+        style={{ marginTop: '16px', textAlign: 'center', cursor: 'pointer', color: '#7dd3fc', fontSize: '14px' }}
         onClick={() => { setModoCadastro(!modoCadastro); setErro(''); }}
       >
         {modoCadastro ? 'Já tem uma conta? Faça login' : 'Não tem conta? Cadastre-se'}
