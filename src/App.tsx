@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Header } from "./components/Header";
 import { DashboardResumo } from "./components/DashboardResumo";
 import { FormularioTransacao } from "./components/FormularioTransacao";
@@ -7,6 +7,10 @@ import type { Transacao } from "./types/finance";
 import { Footer } from "./components/Footer";
 import { SaldosPorBanco } from "./components/SaldosPorBanco";
 import { Login } from "./components/Login";
+import {
+  FiltrosTransacao,
+  type FiltrosState,
+} from "./components/FiltrosTransacao";
 
 const rawUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const API_URL = (
@@ -14,6 +18,13 @@ const API_URL = (
     ? rawUrl
     : `https://${rawUrl}`
 ).replace(/\/$/, "");
+
+// Auxiliar para busca sem acentos e sem diferenciação de maiúsculas
+const normalizarTexto = (texto: string) =>
+  texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 
 export default function App() {
   // 1. Estados de Autenticação
@@ -30,19 +41,31 @@ export default function App() {
 
   // 2. Estados da Aplicação
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
+
+  // Filtro exclusivo por Mês para o Dashboard
   const [mesFiltro, setMesFiltro] = useState<string>("2026-08");
+
+  // Filtros avançados para o Histórico de Lançamentos
+  const [filtros, setFiltros] = useState<FiltrosState>({
+    tipo: "todos",
+    status: "todos",
+    descricao: "",
+    banco: "todos",
+    categoria: "todas",
+    dataInicio: "",
+    dataFim: "",
+  });
 
   const normalizarTransacao = (transacao: any): Transacao => {
     return {
       ...transacao,
-      valor: Number(String(transacao.valor ?? 0).replace(',', '.')),
+      valor: Number(String(transacao.valor ?? 0).replace(",", ".")),
       tipoGasto: transacao.tipoGasto ?? transacao.tipogasto ?? undefined,
-      id: String(transacao.id ?? ''),
-      data: String(transacao.data ?? ''),
+      id: String(transacao.id ?? ""),
+      data: String(transacao.data ?? ""),
     };
   };
 
-  // Função para deslogar o usuário
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("usuario");
@@ -51,7 +74,6 @@ export default function App() {
     setTransacoes([]);
   };
 
-  // Função auxiliar para enviar requisições com o Token JWT
   const fetchAutenticado = async (
     endpoint: string,
     options: RequestInit = {},
@@ -76,7 +98,7 @@ export default function App() {
     return response;
   };
 
-  // 3. Carrega as transações do usuário logado
+  // 3. Carregar dados do backend
   useEffect(() => {
     if (!token) return;
 
@@ -90,7 +112,81 @@ export default function App() {
       .catch((err) => console.error("Erro ao carregar transações:", err));
   }, [token]);
 
-  // 4. Manipulação de Transações (CRUD)
+  // 4. Listas dinâmicas de Bancos e Categorias
+  const bancosUnicos = useMemo(() => {
+    if (!Array.isArray(transacoes)) return [];
+    const lista = transacoes.map((t) => t.banco).filter(Boolean);
+    return Array.from(new Set(lista));
+  }, [transacoes]);
+
+  const categoriasUnicas = useMemo(() => {
+    if (!Array.isArray(transacoes)) return [];
+    const lista = transacoes.map((t) => t.categoria).filter(Boolean);
+    return Array.from(new Set(lista));
+  }, [transacoes]);
+
+  // 5. Filtro por Mês (Apenas para as Métricas do Dashboard)
+  const transacoesMetricasGerais = useMemo(() => {
+    if (!Array.isArray(transacoes)) return [];
+    return transacoes.filter((t) => {
+      if (!mesFiltro) return true;
+      return t?.data ? t.data.startsWith(mesFiltro) : false;
+    });
+  }, [transacoes, mesFiltro]);
+
+  // 6. Filtro Avançado Combinado (Para o Histórico de Lançamentos)
+  const transacoesFiltradasHistorico = useMemo(() => {
+    if (!Array.isArray(transacoes)) return [];
+
+    return transacoes.filter((t) => {
+      // Mantém no escopo do mês selecionado acima se não houver intervalo de datas específico
+      if (mesFiltro && !filtros.dataInicio && !filtros.dataFim) {
+        if (!t?.data?.startsWith(mesFiltro)) return false;
+      }
+
+      if (filtros.dataInicio && t.data < filtros.dataInicio) return false;
+      if (filtros.dataFim && t.data > filtros.dataFim) return false;
+
+      if (filtros.tipo !== "todos" && t.tipo !== filtros.tipo) return false;
+
+      if (filtros.status === "pago" && !t.pago) return false;
+      if (filtros.status === "pendente" && t.pago) return false;
+
+      if (
+        filtros.descricao.trim() !== "" &&
+        !normalizarTexto(t.descricao).includes(
+          normalizarTexto(filtros.descricao),
+        )
+      ) {
+        return false;
+      }
+
+      if (filtros.banco !== "todos" && t.banco !== filtros.banco) return false;
+
+      if (
+        filtros.categoria !== "todas" &&
+        t.categoria !== filtros.categoria
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [transacoes, mesFiltro, filtros]);
+
+  const handleLimparFiltrosHistorico = () => {
+    setFiltros({
+      tipo: "todos",
+      status: "todos",
+      descricao: "",
+      banco: "todos",
+      categoria: "todas",
+      dataInicio: "",
+      dataFim: "",
+    });
+  };
+
+  // 7. Manipulação CRUD
   const handleAdicionarTransacao = async (
     novaTransacao: Omit<Transacao, "id">,
   ) => {
@@ -103,8 +199,11 @@ export default function App() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(`Erro ao salvar transação: ${data.erro || data.mensagem || 'Falha no servidor'}`);
-        console.error("Erro detalhado do servidor:", data);
+        alert(
+          `Erro ao salvar transação: ${
+            data.erro || data.mensagem || "Falha no servidor"
+          }`,
+        );
         return;
       }
 
@@ -148,7 +247,7 @@ export default function App() {
     }
   };
 
-  // 5. Se não houver token, exibe a tela de Login/Cadastro
+  // 8. Tela de Login se deslogado
   if (!token) {
     return (
       <Login
@@ -162,20 +261,12 @@ export default function App() {
     );
   }
 
-  // Filtrar transações com base no mês selecionado
-  const transacoesFiltradas = Array.isArray(transacoes)
-    ? transacoes.filter((t) => {
-        if (!mesFiltro) return true;
-        return t?.data ? t.data.startsWith(mesFiltro) : false;
-      })
-    : [];
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased">
       <Header />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Barra de Identificação do Usuário e Logout */}
+        {/* Identificação de Usuário e Logout */}
         <div className="bg-slate-900/70 border border-slate-800 p-4 rounded-2xl mb-6 flex items-center justify-between shadow-sm shadow-slate-950/20">
           <div>
             <p className="text-xs text-slate-400">Usuário Autenticado</p>
@@ -191,14 +282,14 @@ export default function App() {
           </button>
         </div>
 
-        {/* Barra de Filtro de Mês */}
+        {/* Mês de Referência Geral (Cards e Métricas) */}
         <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md shadow-slate-950/20">
           <div>
             <h2 className="text-sm font-semibold text-white">
-              Filtrar Período
+              Métricas Gerais por Mês
             </h2>
             <p className="text-xs text-slate-400">
-              Selecione o mês de referência para análise
+              Selecione o mês de referência para o resumo
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -219,19 +310,29 @@ export default function App() {
           </div>
         </div>
 
-        {/* Cards de Métricas e Saldos */}
-        <DashboardResumo transacoes={transacoesFiltradas} />
+        {/* Resumo e Bancos */}
+        <DashboardResumo transacoes={transacoesMetricasGerais} />
         <SaldosPorBanco transacoes={transacoes} />
 
-        {/* Formulário de Adição */}
+        {/* Adicionar Transação */}
         <FormularioTransacao onAdicionarTransacao={handleAdicionarTransacao} />
 
-        {/* Tabela de Lançamentos */}
-        <ListaTransacoes
-          transacoes={transacoesFiltradas}
-          onDeletarTransacao={handleDeletarTransacao}
-          onAlternarPago={handleAlternarPago}
-        />
+        {/* Histórico com Filtros Avançados Expansíveis */}
+        <div className="mt-8">
+          <FiltrosTransacao
+            filtros={filtros}
+            setFiltros={setFiltros}
+            bancos={bancosUnicos}
+            categorias={categoriasUnicas}
+            onLimpar={handleLimparFiltrosHistorico}
+          />
+
+          <ListaTransacoes
+            transacoes={transacoesFiltradasHistorico}
+            onDeletarTransacao={handleDeletarTransacao}
+            onAlternarPago={handleAlternarPago}
+          />
+        </div>
 
         <Footer />
       </main>
