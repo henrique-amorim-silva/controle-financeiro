@@ -32,6 +32,16 @@ export default function App() {
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
   const [mesFiltro, setMesFiltro] = useState<string>("2026-08");
 
+  const normalizarTransacao = (transacao: any): Transacao => {
+    return {
+      ...transacao,
+      valor: Number(String(transacao.valor ?? 0).replace(',', '.')),
+      tipoGasto: transacao.tipoGasto ?? transacao.tipogasto ?? undefined,
+      id: String(transacao.id ?? ''),
+      data: String(transacao.data ?? ''),
+    };
+  };
+
   // Função para deslogar o usuário
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -74,7 +84,7 @@ export default function App() {
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          setTransacoes(data);
+          setTransacoes(data.map(normalizarTransacao));
         }
       })
       .catch((err) => console.error("Erro ao carregar transações:", err));
@@ -98,7 +108,7 @@ export default function App() {
         return;
       }
 
-      setTransacoes((prev) => [data, ...prev]);
+      setTransacoes((prev) => [normalizarTransacao(data), ...prev]);
     } catch (err) {
       console.error("Erro ao salvar transação:", err);
     }

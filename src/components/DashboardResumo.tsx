@@ -14,15 +14,15 @@ export const DashboardResumo: React.FC<DashboardResumoProps> = ({ transacoes }) 
   // Totais considerando apenas o que já foi efetivado
   const totalReceitas = transacoesLiquidadas
     .filter((t) => t.tipo === 'receita')
-    .reduce((acc, t) => acc + t.valor, 0);
+    .reduce((acc, t) => acc + Number(t.valor), 0);
 
   const totalDespesas = transacoesLiquidadas
     .filter((t) => t.tipo === 'despesa' && t.categoria !== 'Investimentos')
-    .reduce((acc, t) => acc + t.valor, 0);
+    .reduce((acc, t) => acc + Number(t.valor), 0);
 
   const totalInvestimentos = transacoesLiquidadas
     .filter((t) => t.tipo === 'despesa' && t.categoria === 'Investimentos')
-    .reduce((acc, t) => acc + t.valor, 0);
+    .reduce((acc, t) => acc + Number(t.valor), 0);
 
   // Saldo real em conta (apenas o que foi pago/recebido)
   const saldoFinal = totalReceitas - totalDespesas - totalInvestimentos;

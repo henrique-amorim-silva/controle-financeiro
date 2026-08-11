@@ -14,12 +14,13 @@ export const SaldosPorBanco: React.FC<SaldosPorBancoProps> = ({ transacoes }) =>
   // Mapeamento dos saldos agregados por banco
   const saldos = liquidadas.reduce<Record<string, number>>((acc, t) => {
     const nomeBanco = t.banco || 'Outro';
+    const valorAtual = Number(t.valor);
     if (!acc[nomeBanco]) acc[nomeBanco] = 0;
 
     if (t.tipo === 'receita') {
-      acc[nomeBanco] += t.valor;
+      acc[nomeBanco] += valorAtual;
     } else {
-      acc[nomeBanco] -= t.valor;
+      acc[nomeBanco] -= valorAtual;
     }
     return acc;
   }, {});
@@ -27,7 +28,7 @@ export const SaldosPorBanco: React.FC<SaldosPorBancoProps> = ({ transacoes }) =>
   const bancosComSaldo = Object.entries(saldos);
 
   // Soma de todos os saldos de todos os bancos
-  const saldoTotalGeral = bancosComSaldo.reduce((acc, [_, valor]) => acc + valor, 0);
+  const saldoTotalGeral = bancosComSaldo.reduce((acc, [_, valor]) => acc + Number(valor), 0);
 
   if (bancosComSaldo.length === 0) return null;
 

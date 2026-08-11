@@ -60,11 +60,21 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
   const [data, setData] = useState(new Date().toISOString().split('T')[0]);
   const [pago, setPago] = useState(true);
 
+  const parseValor = (input: string) => {
+    const normalized = input
+      .trim()
+      .replace(/\s+/g, '')
+      .replace(/\./g, '')
+      .replace(/,/g, '.');
+
+    return parseFloat(normalized);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Tratamento do valor (conversão de vírgula em ponto caso o usuário digite "15,50")
-    const valorTratado = parseFloat(valor.toString().replace(',', '.'));
+    // Tratamento do valor para entrada em formatos BR / US e compatibilidade com JSON/PostgreSQL
+    const valorTratado = parseValor(valor);
 
     if (!descricao || isNaN(valorTratado) || valorTratado <= 0) {
       alert('Por favor, preencha a descrição e um valor válido.');
@@ -80,7 +90,7 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
       categoria: categoria || 'Geral',
       data,
       pago,
-      tipogasto: tipo === 'despesa' ? tipoGasto : null,
+      tipoGasto: tipo === 'despesa' ? tipoGasto : undefined,
     };
 
     onAdicionarTransacao(novaTransacaoPayload);
@@ -131,8 +141,9 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-slate-400">Valor (R$)</label>
           <input
-            type="number"
-            step="0.01"
+            type="text"
+            inputMode="decimal"
+            pattern="[0-9.,]*"
             placeholder="0,00"
             value={valor}
             onChange={(e) => setValor(e.target.value)}
