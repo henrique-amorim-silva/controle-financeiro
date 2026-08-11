@@ -24,6 +24,7 @@ export type CategoriaDespesa =
   | 'Contas Fixas'
   | 'Cartão de Crédito'
   | 'Investimentos'
+  | 'Financiamento'
   | 'Outros';
 
 export type CategoriaReceita =
