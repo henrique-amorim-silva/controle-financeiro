@@ -43,6 +43,7 @@ const normalizarTexto = (texto: string) =>
     .trim();
 
 export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
+  const [isAberto, setIsAberto] = useState(false);
   const [graficoSelecionado, setGraficoSelecionado] =
     useState<TipoGrafico>("gastos_tipo");
 
@@ -202,102 +203,137 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
   );
 
   return (
-    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 mb-6 shadow-md shadow-slate-950/30">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 border-b border-slate-800 pb-4">
-        <div>
-          <h2 className="text-base font-semibold text-white">Análise Gráfica</h2>
-          <p className="text-xs text-slate-400">
-            Selecione a visualização desejada
-          </p>
-        </div>
-
-        <select
-          value={graficoSelecionado}
-          onChange={(e) =>
-            setGraficoSelecionado(e.target.value as TipoGrafico)
-          }
-          className="bg-slate-950 border border-slate-700/80 text-slate-200 text-xs rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer w-full sm:w-auto font-medium"
-        >
-          <option value="gastos_tipo">Gastos Fixos vs Variáveis (%)</option>
-          <option value="receitas_cat">Receitas por Categoria (%)</option>
-          <option value="receitas_desc">Receitas por Descrição (%)</option>
-          <option value="despesas_cat">Despesas por Categoria (%)</option>
-          <option value="despesas_desc">Despesas por Descrição (%)</option>
-          <option value="cartao_desc">Cartão de Crédito por Descrição (%)</option>
-          <option value="investimentos_desc">Investimentos por Descrição (%)</option>
-        </select>
-      </div>
-
-      {/* EXIBIÇÃO DO VALOR TOTAL DO GRÁFICO */}
-      {dadosAtuais.length > 0 && (
-        <div className="flex items-center justify-between bg-slate-950/60 border border-slate-800/80 rounded-xl px-4 py-2.5 mb-2">
-          <span className="text-xs text-slate-400 font-medium">Total Analisado:</span>
-          <span className="text-sm font-bold text-emerald-400">
-            R$ {totalValor.toLocaleString("pt-BR", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
+    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl mb-6 shadow-md shadow-slate-950/30 overflow-hidden transition-all">
+      <div
+        onClick={() => setIsAberto(!isAberto)}
+        className="w-full p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800/50 transition-colors select-none"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-white">
+            Análise Gráfica
+          </span>
+          <span className="text-xs text-slate-400 font-normal hidden sm:inline">
+            — clique para {isAberto ? "recolher" : "visualizar gráficos"}
           </span>
         </div>
-      )}
 
-      {dadosAtuais.length === 0 ? (
-        <div className="h-64 flex items-center justify-center text-xs text-slate-500">
-          Nenhum dado disponível para o gráfico selecionado neste período.
+        <div className="flex items-center gap-3">
+          <svg
+            className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${
+              isAberto ? "rotate-180 text-emerald-400" : ""
+            }`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
         </div>
-      ) : (
-        <div className="h-80 w-full relative">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={dadosAtuais}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={100}
-                paddingAngle={4}
-                dataKey="value"
-                label={({ percent }: { percent?: number }) =>
-                  `${((percent ?? 0) * 100).toFixed(1)}%`
-                }
-              >
-                {dadosAtuais.map((_, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={CORES[index % CORES.length]}
+      </div>
+
+      {isAberto && (
+        <div className="p-5 border-t border-slate-800/80 bg-slate-950/40 space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-slate-800/60">
+            <div>
+              <p className="text-xs text-slate-400">
+                Selecione a visualização desejada
+              </p>
+            </div>
+
+            <select
+              value={graficoSelecionado}
+              onChange={(e) =>
+                setGraficoSelecionado(e.target.value as TipoGrafico)
+              }
+              className="bg-slate-950 border border-slate-700/80 text-slate-200 text-xs rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer w-full sm:w-auto font-medium"
+            >
+              <option value="gastos_tipo">Gastos Fixos vs Variáveis (%)</option>
+              <option value="receitas_cat">Receitas por Categoria (%)</option>
+              <option value="receitas_desc">Receitas por Descrição (%)</option>
+              <option value="despesas_cat">Despesas por Categoria (%)</option>
+              <option value="despesas_desc">Despesas por Descrição (%)</option>
+              <option value="cartao_desc">Cartão de Crédito por Descrição (%)</option>
+              <option value="investimentos_desc">Investimentos por Descrição (%)</option>
+            </select>
+          </div>
+
+          {/* EXIBIÇÃO DO VALOR TOTAL DO GRÁFICO */}
+          {dadosAtuais.length > 0 && (
+            <div className="flex items-center justify-between bg-slate-950/60 border border-slate-800/80 rounded-xl px-4 py-2.5">
+              <span className="text-xs text-slate-400 font-medium">Total Analisado:</span>
+              <span className="text-sm font-bold text-emerald-400">
+                R$ {totalValor.toLocaleString("pt-BR", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+            </div>
+          )}
+
+          {dadosAtuais.length === 0 ? (
+            <div className="h-64 flex items-center justify-center text-xs text-slate-500">
+              Nenhum dado disponível para o gráfico selecionado neste período.
+            </div>
+          ) : (
+            <div className="h-80 w-full relative">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={dadosAtuais}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={4}
+                    dataKey="value"
+                    label={({ percent }: { percent?: number }) =>
+                      `${((percent ?? 0) * 100).toFixed(1)}%`
+                    }
+                  >
+                    {dadosAtuais.map((_, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={CORES[index % CORES.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: any) => {
+                      const valNum = Number(value ?? 0);
+                      return [
+                        `R$ ${valNum.toLocaleString("pt-BR", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })} (${((valNum / (totalValor || 1)) * 100).toFixed(1)}%)`,
+                        "Valor",
+                      ];
+                    }}
+                    contentStyle={{
+                      backgroundColor: "#020617",
+                      borderColor: "#334155",
+                      borderRadius: "0.75rem",
+                      color: "#f8fafc",
+                      fontSize: "12px",
+                    }}
                   />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value: any) => {
-                  const valNum = Number(value ?? 0);
-                  return [
-                    `R$ ${valNum.toLocaleString("pt-BR", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })} (${((valNum / (totalValor || 1)) * 100).toFixed(1)}%)`,
-                    "Valor",
-                  ];
-                }}
-                contentStyle={{
-                  backgroundColor: "#020617",
-                  borderColor: "#334155",
-                  borderRadius: "0.75rem",
-                  color: "#f8fafc",
-                  fontSize: "12px",
-                }}
-              />
-              <Legend
-                verticalAlign="bottom"
-                height={36}
-                formatter={(value) => (
-                  <span className="text-slate-300 text-xs font-medium ml-1">
-                    {value}
-                  </span>
-                )}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+                  <Legend
+                    verticalAlign="bottom"
+                    height={36}
+                    formatter={(value) => (
+                      <span className="text-slate-300 text-xs font-medium ml-1">
+                        {value}
+                      </span>
+                    )}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       )}
     </div>
