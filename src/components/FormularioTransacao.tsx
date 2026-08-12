@@ -9,10 +9,11 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
 }) => {
   const [descricao, setDescricao] = useState('');
   const [valor, setValor] = useState('');
-  const [tipo, setTipo] = useState<'receita' | 'despesa'>('despesa');
+  const [tipo, setTipo] = useState<'receita' | 'despesa' | 'transferencia'>('despesa');
   const [tipoGasto, setTipoGasto] = useState<'fixo' | 'variavel'>('variavel');
   const [categoria, setCategoria] = useState('Moradia');
   const [banco, setBanco] = useState('Nubank');
+  const [bancoDestino, setBancoDestino] = useState('Banco do Brasil');
   const [pago, setPago] = useState(true);
   const [data, setData] = useState(new Date().toISOString().split('T')[0]);
 
@@ -40,9 +41,6 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
     'Saldo Inicial',
     'Outros',
   ];
-
-  const opcoesCategoria =
-    tipo === 'despesa' ? opcoesCategoriaDespesa : opcoesCategoriaReceita;
 
   const opcoesBanco = [
     'Nubank',
@@ -82,57 +80,35 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
       return;
     }
 
-    // Tratamento de valor para número com ponto flutuante
+    if (tipo === 'transferencia' && banco === bancoDestino) {
+      alert('O banco de origem deve ser diferente do banco de destino.');
+      return;
+    }
+
     const valorNumerico = typeof valor === 'string'
       ? Number(valor.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.'))
       : Number(valor);
 
-    // Monta o objeto de envio
     const novaTransacao = {
       descricao,
       valor: valorNumerico,
       tipo,
-      // Envia tipoGasto e tipogasto para mapear corretamente com a API/Banco de dados
       tipoGasto: tipo === 'despesa' ? tipoGasto : undefined,
       tipogasto: tipo === 'despesa' ? tipoGasto : undefined,
-      categoria: categoria || 'Geral',
+      categoria: tipo === 'transferencia' ? 'Transferência' : (categoria || 'Geral'),
       banco: banco || 'Geral',
+      bancoDestino: tipo === 'transferencia' ? bancoDestino : undefined,
+      banco_destino: tipo === 'transferencia' ? bancoDestino : undefined,
       pago,
       data,
     };
 
     onAdicionarTransacao(novaTransacao);
 
-    // Limpa o formulário mantendo os valores padrão
     setDescricao('');
     setValor('');
     setCategoria(tipo === 'despesa' ? 'Moradia' : 'Salário');
-    setBanco('Nubank');
     setTipoGasto('variavel');
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
-    if (e.key === 'Enter') {
-      const target = e.target as HTMLElement;
-
-      // Se o elemento ativo for o botão de submissão, permite enviar o formulário
-      if (target.tagName === 'BUTTON' || target.getAttribute('type') === 'submit') {
-        return;
-      }
-
-      e.preventDefault();
-
-      const form = e.currentTarget;
-      const selector = 'input:not([disabled]), select:not([disabled]), button:not([disabled])';
-      const focusableElements = Array.from(
-        form.querySelectorAll<HTMLElement>(selector)
-      );
-
-      const currentIndex = focusableElements.indexOf(target);
-      if (currentIndex !== -1 && currentIndex < focusableElements.length - 1) {
-        focusableElements[currentIndex + 1].focus();
-      }
-    }
   };
 
   return (
@@ -141,7 +117,7 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
         <h3 className="text-base font-semibold text-white">Nova Transação</h3>
       </div>
 
-      <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <label className="block text-xs font-medium text-slate-300">
             Tipo de Transação
@@ -149,14 +125,17 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
           <select
             value={tipo}
             onChange={(e) => {
-              const novoTipo = e.target.value as 'receita' | 'despesa';
+              const novoTipo = e.target.value as 'receita' | 'despesa' | 'transferencia';
               setTipo(novoTipo);
-              setCategoria(novoTipo === 'despesa' ? 'Moradia' : 'Salário');
+              if (novoTipo === 'despesa') setCategoria('Moradia');
+              if (novoTipo === 'receita') setCategoria('Salário');
+              if (novoTipo === 'transferencia') setCategoria('Transferência');
             }}
             className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
           >
             <option value="despesa">Despesa</option>
             <option value="receita">Receita</option>
+            <option value="transferencia">Transferência Entre Contas</option>
           </select>
         </div>
 
@@ -168,7 +147,7 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
             type="text"
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
-            placeholder="Ex: Supermercado, Aluguel, Salário..."
+            placeholder={tipo === 'transferencia' ? 'Ex: Transferência Poupança -> Corrente' : 'Ex: Supermercado, Aluguel, Salário...'}
             required
             className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-emerald-500"
           />
@@ -208,41 +187,80 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="block text-xs font-medium text-slate-300">
-              Categoria
-            </label>
-            <select
-              value={categoria}
-              onChange={(e) => setCategoria(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-            >
-              {opcoesCategoria.map((opcao) => (
-                <option key={opcao} value={opcao}>
-                  {opcao}
-                </option>
-              ))}
-            </select>
-          </div>
+        {tipo !== 'transferencia' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-300">
+                Categoria
+              </label>
+              <select
+                value={categoria}
+                onChange={(e) => setCategoria(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              >
+                {(tipo === 'despesa' ? opcoesCategoriaDespesa : opcoesCategoriaReceita).map((opcao) => (
+                  <option key={opcao} value={opcao}>
+                    {opcao}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div className="space-y-2">
-            <label className="block text-xs font-medium text-slate-300">
-              Banco / Conta
-            </label>
-            <select
-              value={banco}
-              onChange={(e) => setBanco(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-            >
-              {opcoesBanco.map((opcao) => (
-                <option key={opcao} value={opcao}>
-                  {opcao}
-                </option>
-              ))}
-            </select>
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-300">
+                Banco / Conta
+              </label>
+              <select
+                value={banco}
+                onChange={(e) => setBanco(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              >
+                {opcoesBanco.map((opcao) => (
+                  <option key={opcao} value={opcao}>
+                    {opcao}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-        </div>
+        ) : (
+          /* Campos Específicos para Transferência */
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-300">
+                Banco Origem (Sai Dinheiro)
+              </label>
+              <select
+                value={banco}
+                onChange={(e) => setBanco(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              >
+                {opcoesBanco.map((opcao) => (
+                  <option key={opcao} value={opcao}>
+                    {opcao}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-300">
+                Banco Destino (Entra Dinheiro)
+              </label>
+              <select
+                value={bancoDestino}
+                onChange={(e) => setBancoDestino(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              >
+                {opcoesBanco.map((opcao) => (
+                  <option key={opcao} value={opcao}>
+                    {opcao}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-2">
           <label className="block text-xs font-medium text-slate-300">

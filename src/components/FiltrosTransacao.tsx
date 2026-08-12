@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 export interface FiltrosState {
-  tipo: "todos" | "despesa" | "receita";
+  tipo: "todos" | "despesa" | "receita" | "transferencia"; // ADICIONADO 'transferencia'
   tipoGasto: "todos" | "fixo" | "variavel";
   status: "todos" | "pago" | "pendente";
   descricao: string;
@@ -67,7 +67,7 @@ export const FiltrosTransacao: React.FC<FiltrosProps> = ({
                 onLimpar();
               }}
               type="button"
-              className="text-xs text-emerald-400 hover:text-emerald-300 underline font-medium transition-colors"
+              className="text-xs text-emerald-400 hover:text-emerald-300 underline font-medium transition-colors cursor-pointer"
             >
               Limpar Filtros
             </button>
@@ -120,7 +120,7 @@ export const FiltrosTransacao: React.FC<FiltrosProps> = ({
                 onChange={(e) =>
                   setFiltros((prev) => ({
                     ...prev,
-                    tipo: e.target.value as "todos" | "despesa" | "receita",
+                    tipo: e.target.value as "todos" | "despesa" | "receita" | "transferencia",
                   }))
                 }
                 className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-emerald-500 outline-none cursor-pointer"
@@ -128,6 +128,7 @@ export const FiltrosTransacao: React.FC<FiltrosProps> = ({
                 <option value="todos">Todos os Tipos</option>
                 <option value="despesa">Saída (Despesa)</option>
                 <option value="receita">Entrada (Receita)</option>
+                <option value="transferencia">Transferência Entre Contas</option>
               </select>
             </div>
 

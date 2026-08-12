@@ -50,7 +50,7 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
               <th className="p-3">Descrição</th>
               <th className="p-3">Classificação</th>
               <th className="p-3">Categoria</th>
-              <th className="p-3">Banco</th>
+              <th className="p-3">Banco / Conta</th>
               <th className="p-3 text-right">Valor</th>
               <th className="p-3 text-center">Ações</th>
             </tr>
@@ -60,6 +60,9 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
               const tipoGastoValor = String(
                 t.tipoGasto ?? t.tipogasto ?? t.tipo_gasto ?? ""
               ).toLowerCase();
+
+              const bancoDestinoFinal = t.bancoDestino || t.banco_destino;
+              const isTransferencia = t.tipo === "transferencia";
 
               return (
                 <tr
@@ -75,17 +78,25 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
                           : "bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30"
                       }`}
                     >
-                      {t.pago ? "Pago" : "Pendente"}
+                      {t.pago ? "Concluído" : "Pendente"}
                     </button>
                   </td>
+
                   <td className="p-3 whitespace-nowrap text-slate-400">
                     {t.data ? formatarData(t.data) : "-"}
                   </td>
+
                   <td className="p-3 font-medium text-slate-100">
                     {t.descricao}
                   </td>
+
+                  {/* Classificação */}
                   <td className="p-3">
-                    {t.tipo === "despesa" ? (
+                    {isTransferencia ? (
+                      <span className="px-2 py-0.5 rounded-lg border text-[10px] font-medium bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
+                        Transferência
+                      </span>
+                    ) : t.tipo === "despesa" ? (
                       <span
                         className={`px-2 py-0.5 rounded-lg border text-[10px] font-medium capitalize ${
                           tipoGastoValor.includes("fixo")
@@ -99,23 +110,45 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
                       <span className="text-slate-600">—</span>
                     )}
                   </td>
+
+                  {/* Categoria */}
                   <td className="p-3">
                     <span className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded-lg border border-slate-700/50">
-                      {t.categoria}
+                      {t.categoria || (isTransferencia ? "Transferência" : "Geral")}
                     </span>
                   </td>
-                  <td className="p-3 text-slate-400">{t.banco}</td>
+
+                  {/* Banco (exibe origem -> destino em transferências) */}
+                  <td className="p-3 text-slate-300">
+                    {isTransferencia && bancoDestinoFinal ? (
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <span className="text-slate-300">{t.banco}</span>
+                        <span className="text-cyan-400 font-bold">➔</span>
+                        <span className="text-slate-200">{bancoDestinoFinal}</span>
+                      </div>
+                    ) : (
+                      <span className="text-slate-400">{t.banco}</span>
+                    )}
+                  </td>
+
+                  {/* Valor */}
                   <td
                     className={`p-3 text-right font-semibold whitespace-nowrap ${
-                      t.tipo === "receita" ? "text-emerald-400" : "text-rose-400"
+                      isTransferencia
+                        ? "text-cyan-400"
+                        : t.tipo === "receita"
+                        ? "text-emerald-400"
+                        : "text-rose-400"
                     }`}
                   >
-                    {t.tipo === "receita" ? "+" : "-"} R${" "}
+                    {isTransferencia ? "↔ " : t.tipo === "receita" ? "+ " : "- "}
+                    R${" "}
                     {Number(t.valor).toLocaleString("pt-BR", {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
                   </td>
+
                   <td className="p-3 text-center">
                     <button
                       onClick={() => onDeletarTransacao(t.id)}

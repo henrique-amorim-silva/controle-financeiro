@@ -1,4 +1,4 @@
-export type TipoTransacao = 'receita' | 'despesa' | string;
+export type TipoTransacao = 'receita' | 'despesa' | 'transferencia' | string;
 export type TipoGasto = 'fixo' | 'variavel' | string;
 
 // Nova tipagem para Bancos / Contas
@@ -37,13 +37,18 @@ export type CategoriaReceita =
   | 'Saldo Inicial'
   | 'Outros';
 
+// Categoria para movimentações internas entre contas
+export type CategoriaTransferencia = 'Transferência';
+
 export interface Transacao {
   id: string;
   descricao: string;
   valor: number;
   tipo: TipoTransacao;
-  categoria: CategoriaDespesa | CategoriaReceita;
-  banco: Banco; // <--- Novo campo obrigatório
+  categoria: CategoriaDespesa | CategoriaReceita | CategoriaTransferencia | string;
+  banco: Banco; // Banco de Origem
+  bancoDestino?: Banco; // Banco de Destino (para transferências)
+  banco_destino?: Banco; // Fallback para compatibilidade com o PostgreSQL
   data: string;
   pago: boolean;
   tipoGasto?: TipoGasto;
