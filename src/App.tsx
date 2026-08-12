@@ -8,6 +8,7 @@ import { Footer } from "./components/Footer";
 import { SaldosPorBanco } from "./components/SaldosPorBanco";
 import { Login } from "./components/Login";
 import { SecaoGraficos } from "./components/SecaoGraficos";
+import { AcoesRapidas } from "./components/AcoesRapidas";
 import {
   FiltrosTransacao,
   type FiltrosState,
@@ -28,7 +29,7 @@ const normalizarTexto = (texto: string) =>
 
 export default function App() {
   const [token, setToken] = useState<string | null>(() =>
-    localStorage.getItem("token")
+    localStorage.getItem("token"),
   );
   const [usuario, setUsuario] = useState<{
     nome: string;
@@ -75,7 +76,7 @@ export default function App() {
 
   const fetchAutenticado = async (
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
   ) => {
     const headers = {
       "Content-Type": "application/json",
@@ -147,15 +148,12 @@ export default function App() {
       if (filtros.tipoGasto !== "todos") {
         if (t.tipo !== "despesa") return false;
         const tipoGastoItem = String(
-          t.tipoGasto ?? t.tipogasto ?? t.tipo_gasto ?? ""
+          t.tipoGasto ?? t.tipogasto ?? t.tipo_gasto ?? "",
         )
           .trim()
           .toLowerCase();
 
-        if (
-          filtros.tipoGasto === "fixo" &&
-          !tipoGastoItem.includes("fixo")
-        ) {
+        if (filtros.tipoGasto === "fixo" && !tipoGastoItem.includes("fixo")) {
           return false;
         }
         if (
@@ -172,7 +170,7 @@ export default function App() {
       if (
         filtros.descricao.trim() !== "" &&
         !normalizarTexto(t.descricao).includes(
-          normalizarTexto(filtros.descricao)
+          normalizarTexto(filtros.descricao),
         )
       ) {
         return false;
@@ -180,10 +178,7 @@ export default function App() {
 
       if (filtros.banco !== "todos" && t.banco !== filtros.banco) return false;
 
-      if (
-        filtros.categoria !== "todas" &&
-        t.categoria !== filtros.categoria
-      ) {
+      if (filtros.categoria !== "todas" && t.categoria !== filtros.categoria) {
         return false;
       }
 
@@ -205,7 +200,7 @@ export default function App() {
   };
 
   const handleAdicionarTransacao = async (
-    novaTransacao: Omit<Transacao, "id">
+    novaTransacao: Omit<Transacao, "id">,
   ) => {
     try {
       const response = await fetchAutenticado("/transacoes", {
@@ -219,7 +214,7 @@ export default function App() {
         alert(
           `Erro ao salvar transação: ${
             data.erro || data.mensagem || "Falha no servidor"
-          }`
+          }`,
         );
         return;
       }
@@ -229,6 +224,111 @@ export default function App() {
       console.error("Erro ao salvar transação:", err);
     }
   };
+
+  const handleDuplicarGastosFixos = async () => {
+  // 1. Valida se há um mês selecionado no filtro geral
+  if (!mesFiltro) {
+    alert(
+      "Por favor, selecione um mês de referência no filtro superior para realizar a importação."
+    );
+    return;
+  }
+
+  // Extrai ano e mês de destino a partir do mesFiltro (ex: "2026-09")
+  const [anoDestino, mesDestino] = mesFiltro.split("-").map(Number);
+
+  // 2. Calcula o mês e ano de origem (mês anterior ao mesFiltro)
+  const dataOrigem = new Date(anoDestino, mesDestino - 2, 1);
+  const mesOrigemNum = dataOrigem.getMonth() + 1;
+  const anoOrigemNum = dataOrigem.getFullYear();
+
+  // 3. Filtra os gastos fixos do mês de origem
+  const gastosFixosMesAnterior = transacoes.filter((t) => {
+    if (!t.data) return false;
+
+    let ano: number = 0;
+    let mes: number = 0;
+
+    if (t.data.includes("-")) {
+      const partes = t.data.split("-").map(Number);
+      ano = partes[0];
+      mes = partes[1];
+    } else if (t.data.includes("/")) {
+      const partes = t.data.split("/").map(Number);
+      mes = partes[1];
+      ano = partes[2];
+    } else {
+      return false;
+    }
+
+    const tipoGasto = String(
+      t.tipoGasto ?? t.tipogasto ?? t.tipo_gasto ?? ""
+    ).toLowerCase();
+
+    return (
+      t.tipo === "despesa" &&
+      tipoGasto.includes("fixo") &&
+      mes === mesOrigemNum &&
+      ano === anoOrigemNum
+    );
+  });
+
+  if (gastosFixosMesAnterior.length === 0) {
+    alert(
+      `Nenhum gasto fixo foi encontrado no mês ${String(mesOrigemNum).padStart(
+        2,
+        "0"
+      )}/${anoOrigemNum} para importar.`
+    );
+    return;
+  }
+
+  const strOrigem = `${String(mesOrigemNum).padStart(2, "0")}/${anoOrigemNum}`;
+  const strDestino = `${String(mesDestino).padStart(2, "0")}/${anoDestino}`;
+
+  const confirmacao = window.confirm(
+    `Encontramos ${gastosFixosMesAnterior.length} gasto(s) fixo(s) em ${strOrigem}. Deseja importá-los para ${strDestino} como PENDENTES?`
+  );
+
+  if (!confirmacao) return;
+
+  // 4. Importa as transações ajustando para a nova data
+  try {
+    for (const gasto of gastosFixosMesAnterior) {
+      let diaStr = "01";
+
+      if (gasto.data.includes("-")) {
+        diaStr = gasto.data.split("-")[2];
+      } else if (gasto.data.includes("/")) {
+        diaStr = gasto.data.split("/")[0];
+      }
+
+      // Cria a nova data no formato YYYY-MM-DD
+      const novaData = `${anoDestino}-${String(mesDestino).padStart(
+        2,
+        "0"
+      )}-${diaStr.padStart(2, "0")}`;
+
+      const novaTransacao: Omit<Transacao, "id"> = {
+        descricao: gasto.descricao,
+        valor: gasto.valor,
+        tipo: "despesa",
+        tipoGasto: "fixo",
+        categoria: gasto.categoria,
+        banco: gasto.banco,
+        pago: false, // Força status PENDENTE no novo mês
+        data: novaData,
+      };
+
+      await handleAdicionarTransacao(novaTransacao);
+    }
+
+    alert(`Gastos fixos importados com sucesso para ${strDestino}!`);
+  } catch (error) {
+    console.error("Erro ao duplicar gastos fixos:", error);
+    alert("Ocorreu um erro ao importar alguns gastos.");
+  }
+};
 
   const handleDeletarTransacao = async (id: string) => {
     try {
@@ -256,7 +356,7 @@ export default function App() {
 
       if (response.ok) {
         setTransacoes((prev) =>
-          prev.map((t) => (t.id === id ? { ...t, pago: !t.pago } : t))
+          prev.map((t) => (t.id === id ? { ...t, pago: !t.pago } : t)),
         );
       }
     } catch (err) {
@@ -328,6 +428,8 @@ export default function App() {
         <SaldosPorBanco transacoes={transacoes} />
 
         <SecaoGraficos transacoes={transacoesMetricasGerais} />
+
+        <AcoesRapidas onDuplicarGastosFixos={handleDuplicarGastosFixos} />
 
         <FormularioTransacao onAdicionarTransacao={handleAdicionarTransacao} />
 
