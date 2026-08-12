@@ -28,6 +28,7 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
     'Investimentos',
     'Financiamento',
     'Empréstimo',
+    'Combustível',
     'Outros',
   ];
 
