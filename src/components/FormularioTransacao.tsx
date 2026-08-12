@@ -111,13 +111,37 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
     setTipoGasto('variavel');
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    if (e.key === 'Enter') {
+      const target = e.target as HTMLElement;
+
+      // Se o elemento ativo for o botão de submissão, permite enviar o formulário
+      if (target.tagName === 'BUTTON' || target.getAttribute('type') === 'submit') {
+        return;
+      }
+
+      e.preventDefault();
+
+      const form = e.currentTarget;
+      const selector = 'input:not([disabled]), select:not([disabled]), button:not([disabled])';
+      const focusableElements = Array.from(
+        form.querySelectorAll<HTMLElement>(selector)
+      );
+
+      const currentIndex = focusableElements.indexOf(target);
+      if (currentIndex !== -1 && currentIndex < focusableElements.length - 1) {
+        focusableElements[currentIndex + 1].focus();
+      }
+    }
+  };
+
   return (
     <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 mb-6 shadow-md shadow-slate-950/30">
       <div className="mb-5 border-b border-slate-800 pb-4">
         <h3 className="text-base font-semibold text-white">Nova Transação</h3>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-4">
         <div className="space-y-2">
           <label className="block text-xs font-medium text-slate-300">
             Tipo de Transação
