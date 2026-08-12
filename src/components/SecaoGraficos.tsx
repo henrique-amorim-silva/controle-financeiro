@@ -19,8 +19,8 @@ type TipoGrafico =
   | "receitas_desc"
   | "despesas_cat"
   | "despesas_desc"
-  | "cartao_desc"       // NOVO: Cartão de Crédito x Descrição
-  | "investimentos_desc"; // NOVO: Investimentos x Descrição
+  | "cartao_desc"
+  | "investimentos_desc";
 
 const CORES = [
   "#3b82f6",
@@ -128,7 +128,7 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
       .sort((a, b) => b.value - a.value);
   }, [transacoes]);
 
-  // 6. NOVO: Cartão de Crédito x Descrição
+  // 6. Cartão de Crédito x Descrição
   const dadosCartaoDesc = useMemo(() => {
     const mapa: Record<string, number> = {};
     transacoes
@@ -147,7 +147,7 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
       .sort((a, b) => b.value - a.value);
   }, [transacoes]);
 
-  // 7. NOVO: Investimentos x Descrição
+  // 7. Investimentos x Descrição
   const dadosInvestimentosDesc = useMemo(() => {
     const mapa: Record<string, number> = {};
     transacoes
@@ -164,7 +164,7 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
       .sort((a, b) => b.value - a.value);
   }, [transacoes]);
 
-  // Seleção de dados com base na escolha do dropdown
+  // Mapeamento dinâmico
   const dadosAtuais = useMemo(() => {
     switch (graficoSelecionado) {
       case "gastos_tipo":
@@ -195,6 +195,7 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
     dadosInvestimentosDesc,
   ]);
 
+  // Cálculo do valor total exibido no gráfico
   const totalValor = useMemo(
     () => dadosAtuais.reduce((acc, item) => acc + item.value, 0),
     [dadosAtuais]
@@ -202,7 +203,7 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
 
   return (
     <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 mb-6 shadow-md shadow-slate-950/30">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 border-b border-slate-800 pb-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 border-b border-slate-800 pb-4">
         <div>
           <h2 className="text-base font-semibold text-white">Análise Gráfica</h2>
           <p className="text-xs text-slate-400">
@@ -227,12 +228,25 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
         </select>
       </div>
 
+      {/* EXIBIÇÃO DO VALOR TOTAL DO GRÁFICO */}
+      {dadosAtuais.length > 0 && (
+        <div className="flex items-center justify-between bg-slate-950/60 border border-slate-800/80 rounded-xl px-4 py-2.5 mb-2">
+          <span className="text-xs text-slate-400 font-medium">Total Analisado:</span>
+          <span className="text-sm font-bold text-emerald-400">
+            R$ {totalValor.toLocaleString("pt-BR", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </span>
+        </div>
+      )}
+
       {dadosAtuais.length === 0 ? (
         <div className="h-64 flex items-center justify-center text-xs text-slate-500">
           Nenhum dado disponível para o gráfico selecionado neste período.
         </div>
       ) : (
-        <div className="h-80 w-full">
+        <div className="h-80 w-full relative">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
