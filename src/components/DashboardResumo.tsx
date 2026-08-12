@@ -60,7 +60,7 @@ export const DashboardResumo: React.FC<DashboardResumoProps> = ({ transacoes }) 
         />
 
         <CardResumo
-          titulo="Saldo Real Disponível"
+          titulo="Saldo Real Mensal"
           valor={saldoFinal}
           icon={Wallet}
           corTexto={saldoFinal >= 0 ? 'text-emerald-400' : 'text-rose-400'}

@@ -318,7 +318,7 @@ export default function App() {
                 onClick={() => setMesFiltro("")}
                 className="text-xs text-slate-400 hover:text-slate-200 underline px-2 py-1 cursor-pointer"
               >
-                Ver Todos
+                Balanço Geral
               </button>
             )}
           </div>
