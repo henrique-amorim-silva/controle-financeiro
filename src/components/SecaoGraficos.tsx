@@ -18,7 +18,9 @@ type TipoGrafico =
   | "receitas_cat"
   | "receitas_desc"
   | "despesas_cat"
-  | "despesas_desc";
+  | "despesas_desc"
+  | "cartao_desc"       // NOVO: Cartão de Crédito x Descrição
+  | "investimentos_desc"; // NOVO: Investimentos x Descrição
 
 const CORES = [
   "#3b82f6",
@@ -29,13 +31,22 @@ const CORES = [
   "#ec4899",
   "#14b8a6",
   "#f97316",
+  "#06b6d4",
+  "#84cc16",
 ];
+
+const normalizarTexto = (texto: string) =>
+  texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 
 export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
   const [graficoSelecionado, setGraficoSelecionado] =
     useState<TipoGrafico>("gastos_tipo");
-  const [isAberto, setIsAberto] = useState(true);
 
+  // 1. Gastos Fixos vs Variáveis
   const dadosGastosTipo = useMemo(() => {
     let fixos = 0;
     let variaveis = 0;
@@ -65,6 +76,7 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
     ].filter((item) => item.value > 0);
   }, [transacoes]);
 
+  // 2. Receitas por Categoria
   const dadosReceitasCat = useMemo(() => {
     const mapa: Record<string, number> = {};
     transacoes
@@ -76,6 +88,7 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
     return Object.entries(mapa).map(([name, value]) => ({ name, value }));
   }, [transacoes]);
 
+  // 3. Receitas por Descrição
   const dadosReceitasDesc = useMemo(() => {
     const mapa: Record<string, number> = {};
     transacoes
@@ -89,6 +102,7 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
       .sort((a, b) => b.value - a.value);
   }, [transacoes]);
 
+  // 4. Despesas por Categoria
   const dadosDespesasCat = useMemo(() => {
     const mapa: Record<string, number> = {};
     transacoes
@@ -100,6 +114,7 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
     return Object.entries(mapa).map(([name, value]) => ({ name, value }));
   }, [transacoes]);
 
+  // 5. Despesas por Descrição
   const dadosDespesasDesc = useMemo(() => {
     const mapa: Record<string, number> = {};
     transacoes
@@ -113,6 +128,43 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
       .sort((a, b) => b.value - a.value);
   }, [transacoes]);
 
+  // 6. NOVO: Cartão de Crédito x Descrição
+  const dadosCartaoDesc = useMemo(() => {
+    const mapa: Record<string, number> = {};
+    transacoes
+      .filter(
+        (t) =>
+          t.tipo === "despesa" &&
+          normalizarTexto(t.categoria || "").includes("cartao de credito")
+      )
+      .forEach((t) => {
+        const desc = t.descricao || "Sem Descrição";
+        mapa[desc] = (mapa[desc] || 0) + Number(t.valor);
+      });
+
+    return Object.entries(mapa)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [transacoes]);
+
+  // 7. NOVO: Investimentos x Descrição
+  const dadosInvestimentosDesc = useMemo(() => {
+    const mapa: Record<string, number> = {};
+    transacoes
+      .filter((t) =>
+        normalizarTexto(t.categoria || "").includes("investimento")
+      )
+      .forEach((t) => {
+        const desc = t.descricao || "Sem Descrição";
+        mapa[desc] = (mapa[desc] || 0) + Number(t.valor);
+      });
+
+    return Object.entries(mapa)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [transacoes]);
+
+  // Seleção de dados com base na escolha do dropdown
   const dadosAtuais = useMemo(() => {
     switch (graficoSelecionado) {
       case "gastos_tipo":
@@ -125,6 +177,10 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
         return dadosDespesasCat;
       case "despesas_desc":
         return dadosDespesasDesc;
+      case "cartao_desc":
+        return dadosCartaoDesc;
+      case "investimentos_desc":
+        return dadosInvestimentosDesc;
       default:
         return [];
     }
@@ -135,6 +191,8 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
     dadosReceitasDesc,
     dadosDespesasCat,
     dadosDespesasDesc,
+    dadosCartaoDesc,
+    dadosInvestimentosDesc,
   ]);
 
   const totalValor = useMemo(
@@ -143,115 +201,89 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
   );
 
   return (
-    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl mb-6 shadow-md shadow-slate-950/30 overflow-hidden transition-all">
-      <div
-        onClick={() => setIsAberto(!isAberto)}
-        className="w-full p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800/50 transition-colors select-none"
-      >
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-white">Análise Gráfica</span>
+    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 mb-6 shadow-md shadow-slate-950/30">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 border-b border-slate-800 pb-4">
+        <div>
+          <h2 className="text-base font-semibold text-white">Análise Gráfica</h2>
+          <p className="text-xs text-slate-400">
+            Selecione a visualização desejada
+          </p>
         </div>
 
-        <svg
-          className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${
-            isAberto ? "rotate-180 text-emerald-400" : ""
-          }`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+        <select
+          value={graficoSelecionado}
+          onChange={(e) =>
+            setGraficoSelecionado(e.target.value as TipoGrafico)
+          }
+          className="bg-slate-950 border border-slate-700/80 text-slate-200 text-xs rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer w-full sm:w-auto font-medium"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
+          <option value="gastos_tipo">Gastos Fixos vs Variáveis (%)</option>
+          <option value="receitas_cat">Receitas por Categoria (%)</option>
+          <option value="receitas_desc">Receitas por Descrição (%)</option>
+          <option value="despesas_cat">Despesas por Categoria (%)</option>
+          <option value="despesas_desc">Despesas por Descrição (%)</option>
+          <option value="cartao_desc">Cartão de Crédito por Descrição (%)</option>
+          <option value="investimentos_desc">Investimentos por Descrição (%)</option>
+        </select>
       </div>
 
-      {isAberto && (
-        <div className="p-5 border-t border-slate-800/80 bg-slate-950/40">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-            <div>
-              <p className="text-xs text-slate-400">
-                Selecione a visualização desejada
-              </p>
-            </div>
-
-            <select
-              value={graficoSelecionado}
-              onChange={(e) =>
-                setGraficoSelecionado(e.target.value as TipoGrafico)
-              }
-              className="bg-slate-950 border border-slate-700/80 text-slate-200 text-xs rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer w-full sm:w-auto font-medium"
-            >
-              <option value="gastos_tipo">Gastos Fixos vs Variáveis (%)</option>
-              <option value="receitas_cat">Receitas por Categoria (%)</option>
-              <option value="receitas_desc">Receitas por Descrição (%)</option>
-              <option value="despesas_cat">Despesas por Categoria (%)</option>
-              <option value="despesas_desc">Despesas por Descrição (%)</option>
-            </select>
-          </div>
-
-          {dadosAtuais.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-xs text-slate-500">
-              Nenhum dado disponível para o gráfico selecionado neste período.
-            </div>
-          ) : (
-            <div className="h-80 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={dadosAtuais}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={4}
-                    dataKey="value"
-                    label={({ percent }: { percent?: number }) =>
-                      `${((percent ?? 0) * 100).toFixed(1)}%`
-                    }
-                  >
-                    {dadosAtuais.map((_, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={CORES[index % CORES.length]}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value: any) => {
-                      const valNum = Number(value ?? 0);
-                      return [
-                        `R$ ${valNum.toLocaleString("pt-BR", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })} (${((valNum / (totalValor || 1)) * 100).toFixed(1)}%)`,
-                        "Valor",
-                      ];
-                    }}
-                    contentStyle={{
-                      backgroundColor: "#020617",
-                      borderColor: "#334155",
-                      borderRadius: "0.75rem",
-                      color: "#f8fafc",
-                      fontSize: "12px",
-                    }}
+      {dadosAtuais.length === 0 ? (
+        <div className="h-64 flex items-center justify-center text-xs text-slate-500">
+          Nenhum dado disponível para o gráfico selecionado neste período.
+        </div>
+      ) : (
+        <div className="h-80 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={dadosAtuais}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={100}
+                paddingAngle={4}
+                dataKey="value"
+                label={({ percent }: { percent?: number }) =>
+                  `${((percent ?? 0) * 100).toFixed(1)}%`
+                }
+              >
+                {dadosAtuais.map((_, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={CORES[index % CORES.length]}
                   />
-                  <Legend
-                    verticalAlign="bottom"
-                    height={36}
-                    formatter={(value) => (
-                      <span className="text-slate-300 text-xs font-medium ml-1">
-                        {value}
-                      </span>
-                    )}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          )}
+                ))}
+              </Pie>
+              <Tooltip
+                formatter={(value: any) => {
+                  const valNum = Number(value ?? 0);
+                  return [
+                    `R$ ${valNum.toLocaleString("pt-BR", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })} (${((valNum / (totalValor || 1)) * 100).toFixed(1)}%)`,
+                    "Valor",
+                  ];
+                }}
+                contentStyle={{
+                  backgroundColor: "#020617",
+                  borderColor: "#334155",
+                  borderRadius: "0.75rem",
+                  color: "#f8fafc",
+                  fontSize: "12px",
+                }}
+              />
+              <Legend
+                verticalAlign="bottom"
+                height={36}
+                formatter={(value) => (
+                  <span className="text-slate-300 text-xs font-medium ml-1">
+                    {value}
+                  </span>
+                )}
+              />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
       )}
     </div>
