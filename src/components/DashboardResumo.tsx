@@ -27,10 +27,14 @@ export const DashboardResumo: React.FC<DashboardResumoProps> = ({ transacoes }) 
   // Saldo real em conta (apenas o que foi pago/recebido)
   const saldoFinal = totalReceitas - totalDespesas - totalInvestimentos;
 
-  // Cálculo opcional: Previsão de pendências para alertar o usuário
+  // Cálculo de pendências
   const pendenciasSaida = transacoes
     .filter((t) => !t.pago && t.tipo === 'despesa')
-    .reduce((acc, t) => acc + t.valor, 0);
+    .reduce((acc, t) => acc + Number(t.valor), 0);
+
+  const pendenciasEntrada = transacoes
+    .filter((t) => !t.pago && t.tipo === 'receita')
+    .reduce((acc, t) => acc + Number(t.valor), 0);
 
   return (
     <section className="mb-8">
@@ -73,12 +77,20 @@ export const DashboardResumo: React.FC<DashboardResumoProps> = ({ transacoes }) 
         />
       </div>
 
-      {/* Alerta discreto caso existam contas pendentes */}
-      {pendenciasSaida > 0 && (
-        <div className="mt-3 text-right text-xs text-amber-400/90 font-medium">
-          ⚠️ Você possui <strong>R$ {pendenciasSaida.toFixed(2)}</strong> em contas a pagar pendentes neste período.
-        </div>
-      )}
+      {/* Alertas discretos para pendências de entradas e saídas */}
+      <div className="mt-3 flex flex-col sm:flex-row items-end sm:items-center justify-end gap-2 sm:gap-4 text-xs font-medium">
+        {pendenciasEntrada > 0 && (
+          <div className="text-emerald-400/90">
+            ℹ️ Você possui <strong>R$ {pendenciasEntrada.toFixed(2)}</strong> em receitas a receber pendentes.
+          </div>
+        )}
+
+        {pendenciasSaida > 0 && (
+          <div className="text-amber-400/90">
+            ⚠️ Você possui <strong>R$ {pendenciasSaida.toFixed(2)}</strong> em contas a pagar pendentes.
+          </div>
+        )}
+      </div>
     </section>
   );
 };
