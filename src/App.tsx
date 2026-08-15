@@ -411,7 +411,7 @@ export default function App() {
               type="month"
               value={mesFiltro}
               onChange={(e) => setMesFiltro(e.target.value)}
-              className="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-xl px-3 py-2 focus:ring-2 focus:ring-emerald-500 outline-none cursor-pointer"
+              className="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-xl px-3 py-2 focus:ring-2 focus:ring-emerald-500 outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert"
             />
             {mesFiltro && (
               <button
