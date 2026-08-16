@@ -15,6 +15,8 @@ import {
   FiltrosTransacao,
   type FiltrosState,
 } from "./components/FiltrosTransacao";
+import { SecaoMetasLimites } from "./components/SecaoMetasLimites";
+import type { MetaCategoria } from "./types/meta";
 
 const rawUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const API_URL = (
@@ -44,6 +46,9 @@ export default function App() {
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
   const [cartoes, setCartoes] = useState<CartaoCredito[]>([]);
   const [transacaoEmEdicao, setTransacaoEmEdicao] = useState<Transacao | null>(null);
+
+  // Estado para armazenar as metas por categoria (inicializa vazio e busca da API)
+  const [metas, setMetas] = useState<MetaCategoria[]>([]);
 
   // Reference para scroll suave direto até o formulário
   const formularioRef = useRef<HTMLDivElement>(null);
@@ -81,6 +86,7 @@ export default function App() {
     setUsuario(null);
     setTransacoes([]);
     setCartoes([]);
+    setMetas([]);
   };
 
   const fetchAutenticado = async (
@@ -131,6 +137,20 @@ export default function App() {
         }
       })
       .catch((err) => console.error("Erro ao carregar cartões:", err));
+  }, [token]);
+
+  // Carregar as metas via API do backend
+  useEffect(() => {
+    if (!token) return;
+
+    fetchAutenticado("/metas")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setMetas(data);
+        }
+      })
+      .catch((err) => console.error("Erro ao carregar metas:", err));
   }, [token]);
 
   const bancosUnicos = useMemo(() => {
@@ -497,6 +517,44 @@ export default function App() {
     }
   };
 
+  // Funções de manipulação de metas integradas ao backend
+  const handleAdicionarMeta = async (novaMeta: Omit<MetaCategoria, "id">) => {
+    try {
+      const response = await fetchAutenticado("/metas", {
+        method: "POST",
+        body: JSON.stringify(novaMeta),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(`Erro ao cadastrar meta: ${data.mensagem || "Falha no servidor"}`);
+        return;
+      }
+
+      setMetas((prev) => [...prev, data]);
+    } catch (err) {
+      console.error("Erro ao salvar meta:", err);
+    }
+  };
+
+  const handleDeletarMeta = async (id: string) => {
+    try {
+      const response = await fetchAutenticado(`/metas/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setMetas((prev) => prev.filter((m) => m.id !== id));
+      } else {
+        const data = await response.json();
+        alert(data.mensagem || "Erro ao excluir meta.");
+      }
+    } catch (err) {
+      console.error("Erro ao deletar meta:", err);
+    }
+  };
+
   if (!token) {
     return (
       <Login
@@ -558,6 +616,16 @@ export default function App() {
         </div>
 
         <DashboardResumo transacoes={transacoesMetricasGerais} />
+
+        <SecaoMetasLimites
+          transacoes={transacoesMetricasGerais}
+          categorias={categoriasUnicas}
+          mesAtual={mesFiltro}
+          metas={metas}
+          onAdicionarMeta={handleAdicionarMeta}
+          onDeletarMeta={handleDeletarMeta}
+        />
+
         <SaldosPorBanco transacoes={transacoes} />
 
         <SecaoGraficos transacoes={transacoesMetricasGerais} />
