@@ -1,43 +1,77 @@
-export type TipoTransacao = 'receita' | 'despesa' | 'transferencia' | string;
-export type TipoGasto = 'fixo' | 'variavel' | string;
+export const opcoesTipoTransacao = [
+  { value: 'despesa', label: 'Despesa' },
+  { value: 'receita', label: 'Receita' },
+  { value: 'transferencia', label: 'Transferência Entre Contas' },
+] as const;
 
-// Nova tipagem para Bancos / Contas
-export type Banco =
-  | 'Nubank'
-  | 'Itaú'
-  | 'Bradesco'
-  | 'Santander'
-  | 'Banco do Brasil'
-  | 'Inter'
-  | 'Caixa'
-  | 'C6 Bank'
-  | 'Carteira / Dinheiro'
-  | 'Outro';
+export const opcoesTipoGasto = [
+  { value: 'variavel', label: 'Variável' },
+  { value: 'fixo', label: 'Fixo' },
+] as const;
 
+export const opcoesMetodoPagamento = [
+  { value: 'pix', label: 'PIX' },
+  { value: 'debito', label: 'Débito' },
+  { value: 'dinheiro', label: 'Dinheiro' },
+  { value: 'cartao_credito', label: 'Cartão de Crédito' },
+] as const;
+
+export const opcoesBanco = [
+  'Nubank',
+  'Itaú',
+  'Bradesco',
+  'Santander',
+  'Banco do Brasil',
+  'Inter',
+  'Caixa',
+  'C6 Bank',
+  'Carteira / Dinheiro',
+  'Mercado Pago',
+  'Outro',
+] as const;
+
+export const opcoesCategoriaDespesa = [
+  'Moradia',
+  'Alimentação',
+  'Transporte',
+  'Saúde',
+  'Lazer',
+  'Educação',
+  'Contas Fixas',
+  'Cartão de Crédito',
+  'Investimentos',
+  'Financiamento',
+  'Empréstimo',
+  'Combustível',
+  'Outros',
+] as const;
+
+export const opcoesCategoriaReceita = [
+  'Salário',
+  'Freelance',
+  'Rendimentos',
+  'Vendas',
+  'Saldo Inicial',
+  'Outros',
+] as const;
+
+export type TipoTransacao =
+  | (typeof opcoesTipoTransacao)[number]['value']
+  | (string & {});
+export type TipoGasto = (typeof opcoesTipoGasto)[number]['value'] | (string & {});
+
+export type MetodoPagamento =
+  | (typeof opcoesMetodoPagamento)[number]['value']
+  | (string & {});
+
+export type Banco = (typeof opcoesBanco)[number] | (string & {});
 export type CategoriaDespesa =
-  | 'Moradia'
-  | 'Alimentação'
-  | 'Transporte'
-  | 'Saúde'
-  | 'Lazer'
-  | 'Educação'
-  | 'Contas Fixas'
-  | 'Cartão de Crédito'
-  | 'Investimentos'
-  | 'Financiamento'
-  | 'Empréstimo'
-  | 'Combustível'
-  | 'Outros';
-
+  | (typeof opcoesCategoriaDespesa)[number]
+  | (string & {});
 export type CategoriaReceita =
-  | 'Salário'
-  | 'Freelance'
-  | 'Rendimentos'
-  | 'Vendas'
-  | 'Saldo Inicial'
-  | 'Outros';
+  | (typeof opcoesCategoriaReceita)[number]
+  | (string & {});
 
-// Categoria para movimentações internas entre contas
 export type CategoriaTransferencia = 'Transferência';
 
 export interface Transacao {
@@ -46,14 +80,20 @@ export interface Transacao {
   valor: number;
   tipo: TipoTransacao;
   categoria: CategoriaDespesa | CategoriaReceita | CategoriaTransferencia | string;
-  banco: Banco; // Banco de Origem
-  bancoDestino?: Banco; // Banco de Destino (para transferências)
-  banco_destino?: Banco; // Fallback para compatibilidade com o PostgreSQL
+  banco: Banco;
+  bancoDestino?: Banco;
+  banco_destino?: Banco;
   data: string;
   pago: boolean;
   tipoGasto?: TipoGasto;
   tipogasto?: TipoGasto;
   tipo_gasto?: TipoGasto;
+
+  metodoPagamento?: MetodoPagamento;
+  cartaoId?: string;
+  dataVencimentoFatura?: string;
+  parcelaAtual?: number;
+  totalParcelas?: number;
 }
 
 export interface ResumoFinanceiro {

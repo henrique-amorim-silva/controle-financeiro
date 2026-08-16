@@ -1,60 +1,45 @@
 import React, { useState } from "react";
+import type { CartaoCredito } from "../types/cartao";
+import {
+  opcoesBanco,
+  opcoesCategoriaDespesa,
+  opcoesCategoriaReceita,
+  opcoesMetodoPagamento,
+  opcoesTipoGasto,
+  opcoesTipoTransacao,
+  type Banco,
+  type MetodoPagamento,
+  type TipoGasto,
+  type TipoTransacao,
+  type Transacao,
+} from "../types/finance";
+import { calcularVencimentoFatura } from "../utils/cartaoUtils";
 
 interface FormularioTransacaoProps {
-  onAdicionarTransacao: (transacao: any) => void;
+  onAdicionarTransacao: (
+    transacao: Omit<Transacao, "id">
+  ) => Promise<void> | void;
+  cartoes?: CartaoCredito[];
 }
 
 export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
   onAdicionarTransacao,
+  cartoes = [],
 }) => {
   const [descricao, setDescricao] = useState("");
   const [valor, setValor] = useState("");
-  const [tipo, setTipo] = useState<"receita" | "despesa" | "transferencia">(
-    "despesa",
+  const [tipo, setTipo] = useState<TipoTransacao>("despesa");
+  const [tipoGasto, setTipoGasto] = useState<TipoGasto>("variavel");
+  const [metodoPagamento, setMetodoPagamento] = useState<MetodoPagamento>(
+    "pix"
   );
-  const [tipoGasto, setTipoGasto] = useState<"fixo" | "variavel">("variavel");
-  const [categoria, setCategoria] = useState("Moradia");
-  const [banco, setBanco] = useState("Nubank");
-  const [bancoDestino, setBancoDestino] = useState("Banco do Brasil");
+  const [cartaoId, setCartaoId] = useState<string>("");
+  const [totalParcelas, setTotalParcelas] = useState<number>(1);
+  const [categoria, setCategoria] = useState<string>("Moradia");
+  const [banco, setBanco] = useState<Banco>("Nubank");
+  const [bancoDestino, setBancoDestino] = useState<Banco>("Banco do Brasil");
   const [pago, setPago] = useState(true);
   const [data, setData] = useState(new Date().toISOString().split("T")[0]);
-
-  const opcoesCategoriaDespesa = [
-    "Moradia",
-    "Alimentação",
-    "Transporte",
-    "Saúde",
-    "Lazer",
-    "Educação",
-    "Contas Fixas",
-    "Cartão de Crédito",
-    "Investimentos",
-    "Financiamento",
-    "Empréstimo",
-    "Combustível",
-    "Outros",
-  ];
-
-  const opcoesCategoriaReceita = [
-    "Salário",
-    "Freelance",
-    "Rendimentos",
-    "Vendas",
-    "Saldo Inicial",
-    "Outros",
-  ];
-
-  const opcoesBanco = [
-    "Nubank",
-    "Banco do Brasil",
-    "Caixa",
-    "Santander",
-    "Inter",
-    "Bradesco",
-    "Itaú",
-    "Mercado Pago",
-    "Outros",
-  ];
 
   const handleValorChange = (value: string) => {
     const digits = value.replace(/\D/g, "");
@@ -70,11 +55,11 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
         currency: "BRL",
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
-      }).format(numericValue),
+      }).format(numericValue)
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!descricao || !valor || !data) {
@@ -93,31 +78,79 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
             valor
               .replace(/[^\d,.-]/g, "")
               .replace(".", "")
-              .replace(",", "."),
+              .replace(",", ".")
           )
         : Number(valor);
 
-    const novaTransacao = {
-      descricao,
-      valor: valorNumerico,
-      tipo,
-      tipoGasto: tipo === "despesa" ? tipoGasto : undefined,
-      tipogasto: tipo === "despesa" ? tipoGasto : undefined,
-      categoria:
-        tipo === "transferencia" ? "Transferência" : categoria || "Geral",
-      banco: banco || "Geral",
-      bancoDestino: tipo === "transferencia" ? bancoDestino : undefined,
-      banco_destino: tipo === "transferencia" ? bancoDestino : undefined,
-      pago,
-      data,
-    };
+    // Tratamento para Compras no Cartão de Crédito com Parcelamento
+    if (tipo === "despesa" && metodoPagamento === "cartao_credito") {
+      const cartaoSelecionado = cartoes.find(
+        (c) => String(c.id) === String(cartaoId)
+      );
 
-    onAdicionarTransacao(novaTransacao);
+      if (!cartaoSelecionado) {
+        alert("Selecione um cartão de crédito para continuar.");
+        return;
+      }
+
+      const valorParcela = valorNumerico / totalParcelas;
+
+      for (let i = 0; i < totalParcelas; i++) {
+        const dataVencimentoFatura = calcularVencimentoFatura(
+          data,
+          cartaoSelecionado,
+          i
+        );
+
+const novaTransacao: Omit<Transacao, "id"> = {
+          descricao:
+            totalParcelas > 1
+              ? `${descricao} (${i + 1}/${totalParcelas})`
+              : descricao,
+          valor: valorParcela,
+          tipo: "despesa",
+          tipoGasto,
+          tipogasto: tipoGasto,
+          categoria: "Cartão de Crédito",
+          banco: cartaoSelecionado.banco,
+          pago: false,
+          data: dataVencimentoFatura,
+          metodoPagamento: "cartao_credito",
+          cartaoId: String(cartaoSelecionado.id),
+          dataVencimentoFatura,
+          parcelaAtual: i + 1,
+          totalParcelas,
+        };
+
+        await onAdicionarTransacao(novaTransacao);
+      }
+    } else {
+      // Lançamento Padrão (Receita, Transferência ou Despesa Comum)
+      const novaTransacao: Omit<Transacao, "id"> = {
+        descricao,
+        valor: valorNumerico,
+        tipo,
+        tipoGasto: tipo === "despesa" ? tipoGasto : undefined,
+        tipogasto: tipo === "despesa" ? tipoGasto : undefined,
+        categoria:
+          tipo === "transferencia" ? "Transferência" : categoria || "Geral",
+        banco: banco || "Geral",
+        bancoDestino: tipo === "transferencia" ? bancoDestino : undefined,
+        banco_destino: tipo === "transferencia" ? bancoDestino : undefined,
+        pago,
+        data,
+        metodoPagamento: tipo === "despesa" ? metodoPagamento : undefined,
+      };
+
+      await onAdicionarTransacao(novaTransacao);
+    }
 
     setDescricao("");
     setValor("");
     setCategoria(tipo === "despesa" ? "Moradia" : "Salário");
     setTipoGasto("variavel");
+    setTotalParcelas(1);
+    setCartaoId("");
   };
 
   return (
@@ -134,10 +167,7 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
           <select
             value={tipo}
             onChange={(e) => {
-              const novoTipo = e.target.value as
-                | "receita"
-                | "despesa"
-                | "transferencia";
+              const novoTipo = e.target.value as TipoTransacao;
               setTipo(novoTipo);
               if (novoTipo === "despesa") setCategoria("Moradia");
               if (novoTipo === "receita") setCategoria("Salário");
@@ -145,9 +175,11 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
             }}
             className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
           >
-            <option value="despesa">Despesa</option>
-            <option value="receita">Receita</option>
-            <option value="transferencia">Transferência Entre Contas</option>
+            {opcoesTipoTransacao.map((opcao) => (
+              <option key={opcao.value} value={opcao.value}>
+                {opcao.label}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -192,16 +224,87 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
               <select
                 value={tipoGasto}
                 onChange={(e) =>
-                  setTipoGasto(e.target.value as "fixo" | "variavel")
+                  setTipoGasto(e.target.value as TipoGasto)
                 }
                 className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
               >
-                <option value="variavel">Variável</option>
-                <option value="fixo">Fixo</option>
+                {opcoesTipoGasto.map((opcao) => (
+                  <option key={opcao.value} value={opcao.value}>
+                    {opcao.label}
+                  </option>
+                ))}
               </select>
             </div>
           )}
         </div>
+
+        {/* Método de Pagamento para Despesas */}
+        {tipo === "despesa" && (
+          <div className="space-y-2">
+            <label className="block text-xs font-medium text-slate-300">
+              Forma de Pagamento
+            </label>
+            <select
+              value={metodoPagamento}
+              onChange={(e) => {
+                const metodo = e.target.value as MetodoPagamento;
+                setMetodoPagamento(metodo);
+                if (metodo === "cartao_credito") {
+                  setPago(false);
+                  setCategoria("Cartão de Crédito");
+                }
+              }}
+              className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+            >
+              {opcoesMetodoPagamento.map((opcao) => (
+                <option key={opcao.value} value={opcao.value}>
+                  {opcao.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Campos Condicionais para Cartão de Crédito */}
+        {tipo === "despesa" && metodoPagamento === "cartao_credito" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-300">
+                Cartão
+              </label>
+              <select
+                value={cartaoId}
+                onChange={(e) => setCartaoId(e.target.value)}
+                required
+                className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              >
+                <option value="">Selecione o Cartão</option>
+                {cartoes.map((cartao) => (
+                  <option key={cartao.id} value={String(cartao.id)}>
+                    {cartao.nome} ({cartao.banco})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-300">
+                Número de Parcelas
+              </label>
+              <select
+                value={totalParcelas}
+                onChange={(e) => setTotalParcelas(Number(e.target.value))}
+                className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              >
+                {Array.from({ length: 24 }, (_, i) => i + 1).map((n) => (
+                  <option key={n} value={n}>
+                    {n}x {n === 1 ? "(À vista)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
 
         {tipo !== "transferencia" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -212,7 +315,10 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
               <select
                 value={categoria}
                 onChange={(e) => setCategoria(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                disabled={
+                  tipo === "despesa" && metodoPagamento === "cartao_credito"
+                }
+                className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {(tipo === "despesa"
                   ? opcoesCategoriaDespesa
@@ -225,22 +331,24 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
               </select>
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-xs font-medium text-slate-300">
-                Banco / Conta
-              </label>
-              <select
-                value={banco}
-                onChange={(e) => setBanco(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-              >
-                {opcoesBanco.map((opcao) => (
-                  <option key={opcao} value={opcao}>
-                    {opcao}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {metodoPagamento !== "cartao_credito" && (
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-slate-300">
+                  Banco / Conta
+                </label>
+                <select
+                  value={banco}
+                  onChange={(e) => setBanco(e.target.value as Banco)}
+                  className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                >
+                  {opcoesBanco.map((opcao) => (
+                    <option key={opcao} value={opcao}>
+                      {opcao}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         ) : (
           /* Campos Específicos para Transferência */
@@ -268,8 +376,8 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
               </label>
               <select
                 value={bancoDestino}
-                onChange={(e) => setBancoDestino(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer "
+                onChange={(e) => setBancoDestino(e.target.value as Banco)}
+                className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
               >
                 {opcoesBanco.map((opcao) => (
                   <option key={opcao} value={opcao}>
@@ -294,21 +402,23 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
           />
         </div>
 
-        <div className="flex items-center gap-3 pt-1">
-          <input
-            id="pago"
-            type="checkbox"
-            checked={pago}
-            onChange={(e) => setPago(e.target.checked)}
-            className="h-4 w-4 rounded border-slate-600 bg-slate-950 text-emerald-500 focus:ring-emerald-500"
-          />
-          <label
-            htmlFor="pago"
-            className="text-sm text-slate-300 cursor-pointer"
-          >
-            Pago / Concluído
-          </label>
-        </div>
+        {metodoPagamento !== "cartao_credito" && (
+          <div className="flex items-center gap-3 pt-1">
+            <input
+              id="pago"
+              type="checkbox"
+              checked={pago}
+              onChange={(e) => setPago(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-600 bg-slate-950 text-emerald-500 focus:ring-emerald-500"
+            />
+            <label
+              htmlFor="pago"
+              className="text-sm text-slate-300 cursor-pointer"
+            >
+              Pago / Concluído
+            </label>
+          </div>
+        )}
 
         <button
           type="submit"

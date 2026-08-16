@@ -6,12 +6,14 @@ interface ListaTransacoesProps {
   transacoes: Transacao[];
   onDeletarTransacao: (id: string) => void;
   onAlternarPago: (id: string) => void;
+  onPagarFaturaLote?: (ids: string[]) => Promise<void> | void;
 }
 
 export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
   transacoes,
   onDeletarTransacao,
   onAlternarPago,
+  onPagarFaturaLote: _onPagarFaturaLote,
 }) => {
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [itensPorPagina, setItensPorPagina] = useState(10);

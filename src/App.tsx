@@ -2,8 +2,10 @@ import { useState, useEffect, useMemo } from "react";
 import { Header } from "./components/Header";
 import { DashboardResumo } from "./components/DashboardResumo";
 import { FormularioTransacao } from "./components/FormularioTransacao";
+import { FormularioCartao } from "./components/FormularioCartao";
 import { ListaTransacoes } from "./components/ListaTransacoes";
 import type { Transacao } from "./types/finance";
+import type { CartaoCredito } from "./types/cartao";
 import { Footer } from "./components/Footer";
 import { SaldosPorBanco } from "./components/SaldosPorBanco";
 import { Login } from "./components/Login";
@@ -29,7 +31,7 @@ const normalizarTexto = (texto: string) =>
 
 export default function App() {
   const [token, setToken] = useState<string | null>(() =>
-    localStorage.getItem("token"),
+    localStorage.getItem("token")
   );
   const [usuario, setUsuario] = useState<{
     nome: string;
@@ -40,6 +42,8 @@ export default function App() {
   });
 
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
+  const [cartoes, setCartoes] = useState<CartaoCredito[]>([]);
+
   const [mesFiltro, setMesFiltro] = useState<string>("2026-08");
 
   const [filtros, setFiltros] = useState<FiltrosState>({
@@ -72,11 +76,12 @@ export default function App() {
     setToken(null);
     setUsuario(null);
     setTransacoes([]);
+    setCartoes([]);
   };
 
   const fetchAutenticado = async (
     endpoint: string,
-    options: RequestInit = {},
+    options: RequestInit = {}
   ) => {
     const headers = {
       "Content-Type": "application/json",
@@ -109,6 +114,19 @@ export default function App() {
         }
       })
       .catch((err) => console.error("Erro ao carregar transações:", err));
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+
+    fetchAutenticado("/cartoes")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setCartoes(data);
+        }
+      })
+      .catch((err) => console.error("Erro ao carregar cartões:", err));
   }, [token]);
 
   const bancosUnicos = useMemo(() => {
@@ -144,11 +162,10 @@ export default function App() {
 
       if (filtros.tipo !== "todos" && t.tipo !== filtros.tipo) return false;
 
-      // Filtro de Fixos vs Variáveis
       if (filtros.tipoGasto !== "todos") {
         if (t.tipo !== "despesa") return false;
         const tipoGastoItem = String(
-          t.tipoGasto ?? t.tipogasto ?? t.tipo_gasto ?? "",
+          t.tipoGasto ?? t.tipogasto ?? t.tipo_gasto ?? ""
         )
           .trim()
           .toLowerCase();
@@ -170,7 +187,7 @@ export default function App() {
       if (
         filtros.descricao.trim() !== "" &&
         !normalizarTexto(t.descricao).includes(
-          normalizarTexto(filtros.descricao),
+          normalizarTexto(filtros.descricao)
         )
       ) {
         return false;
@@ -200,7 +217,7 @@ export default function App() {
   };
 
   const handleAdicionarTransacao = async (
-    novaTransacao: Omit<Transacao, "id">,
+    novaTransacao: Omit<Transacao, "id">
   ) => {
     try {
       const response = await fetchAutenticado("/transacoes", {
@@ -214,7 +231,7 @@ export default function App() {
         alert(
           `Erro ao salvar transação: ${
             data.erro || data.mensagem || "Falha no servidor"
-          }`,
+          }`
         );
         return;
       }
@@ -225,110 +242,185 @@ export default function App() {
     }
   };
 
-  const handleDuplicarGastosFixos = async () => {
-  // 1. Valida se há um mês selecionado no filtro geral
-  if (!mesFiltro) {
-    alert(
-      "Por favor, selecione um mês de referência no filtro superior para realizar a importação."
-    );
-    return;
-  }
+  const handleAdicionarCartao = async (
+    novoCartao: Omit<CartaoCredito, "id">
+  ) => {
+    try {
+      const response = await fetchAutenticado("/cartoes", {
+        method: "POST",
+        body: JSON.stringify(novoCartao),
+      });
 
-  // Extrai ano e mês de destino a partir do mesFiltro (ex: "2026-09")
-  const [anoDestino, mesDestino] = mesFiltro.split("-").map(Number);
+      const data = await response.json();
 
-  // 2. Calcula o mês e ano de origem (mês anterior ao mesFiltro)
-  const dataOrigem = new Date(anoDestino, mesDestino - 2, 1);
-  const mesOrigemNum = dataOrigem.getMonth() + 1;
-  const anoOrigemNum = dataOrigem.getFullYear();
-
-  // 3. Filtra os gastos fixos do mês de origem
-  const gastosFixosMesAnterior = transacoes.filter((t) => {
-    if (!t.data) return false;
-
-    let ano: number = 0;
-    let mes: number = 0;
-
-    if (t.data.includes("-")) {
-      const partes = t.data.split("-").map(Number);
-      ano = partes[0];
-      mes = partes[1];
-    } else if (t.data.includes("/")) {
-      const partes = t.data.split("/").map(Number);
-      mes = partes[1];
-      ano = partes[2];
-    } else {
-      return false;
-    }
-
-    const tipoGasto = String(
-      t.tipoGasto ?? t.tipogasto ?? t.tipo_gasto ?? ""
-    ).toLowerCase();
-
-    return (
-      t.tipo === "despesa" &&
-      tipoGasto.includes("fixo") &&
-      mes === mesOrigemNum &&
-      ano === anoOrigemNum
-    );
-  });
-
-  if (gastosFixosMesAnterior.length === 0) {
-    alert(
-      `Nenhum gasto fixo foi encontrado no mês ${String(mesOrigemNum).padStart(
-        2,
-        "0"
-      )}/${anoOrigemNum} para importar.`
-    );
-    return;
-  }
-
-  const strOrigem = `${String(mesOrigemNum).padStart(2, "0")}/${anoOrigemNum}`;
-  const strDestino = `${String(mesDestino).padStart(2, "0")}/${anoDestino}`;
-
-  const confirmacao = window.confirm(
-    `Encontramos ${gastosFixosMesAnterior.length} gasto(s) fixo(s) em ${strOrigem}. Deseja importá-los para ${strDestino} como PENDENTES?`
-  );
-
-  if (!confirmacao) return;
-
-  // 4. Importa as transações ajustando para a nova data
-  try {
-    for (const gasto of gastosFixosMesAnterior) {
-      let diaStr = "01";
-
-      if (gasto.data.includes("-")) {
-        diaStr = gasto.data.split("-")[2];
-      } else if (gasto.data.includes("/")) {
-        diaStr = gasto.data.split("/")[0];
+      if (!response.ok) {
+        alert(
+          `Erro ao cadastrar cartão: ${
+            data.erro || data.mensagem || "Falha no servidor"
+          }`
+        );
+        return;
       }
 
-      // Cria a nova data no formato YYYY-MM-DD
-      const novaData = `${anoDestino}-${String(mesDestino).padStart(
-        2,
-        "0"
-      )}-${diaStr.padStart(2, "0")}`;
+      setCartoes((prev) => [...prev, data]);
+      alert("Cartão cadastrado com sucesso!");
+    } catch (err) {
+      console.error("Erro ao salvar cartão:", err);
+    }
+  };
 
-      const novaTransacao: Omit<Transacao, "id"> = {
-        descricao: gasto.descricao,
-        valor: gasto.valor,
-        tipo: "despesa",
-        tipoGasto: "fixo",
-        categoria: gasto.categoria,
-        banco: gasto.banco,
-        pago: false, // Força status PENDENTE no novo mês
-        data: novaData,
-      };
+  const handleDeletarCartao = async (id: number) => {
+    if (!window.confirm("Tem certeza que deseja excluir este cartão?")) return;
 
-      await handleAdicionarTransacao(novaTransacao);
+    try {
+      const response = await fetchAutenticado(`/cartoes/${id}`, {
+        method: "DELETE",
+      });
+
+      const rawText = await response.text();
+      let data: any = {};
+
+      try {
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        throw new Error(
+          `Servidor retornou erro (${response.status}). Certifique-se de ter reiniciado o backend para carregar a rota DELETE.`
+        );
+      }
+
+      if (!response.ok) {
+        alert(data.mensagem || "Não foi possível excluir o cartão.");
+        return;
+      }
+
+      setCartoes((prev) => prev.filter((c) => Number(c.id) !== id));
+      alert(data.mensagem || "Cartão excluído com sucesso!");
+    } catch (err: any) {
+      console.error("Erro ao excluir cartão:", err);
+      alert(err.message || "Erro de conexão ao tentar excluir o cartão.");
+    }
+  };
+
+  const handleDuplicarGastosFixos = async () => {
+    if (!mesFiltro) {
+      alert(
+        "Por favor, selecione um mês de referência no filtro superior para realizar a importação."
+      );
+      return;
     }
 
-    alert(`Gastos fixos importados com sucesso para ${strDestino}!`);
-  } catch (error) {
-    console.error("Erro ao duplicar gastos fixos:", error);
-    alert("Ocorreu um erro ao importar alguns gastos.");
-  }
-};
+    const [anoDestino, mesDestino] = mesFiltro.split("-").map(Number);
+
+    const dataOrigem = new Date(anoDestino, mesDestino - 2, 1);
+    const mesOrigemNum = dataOrigem.getMonth() + 1;
+    const anoOrigemNum = dataOrigem.getFullYear();
+
+    const gastosFixosMesAnterior = transacoes.filter((t) => {
+      if (!t.data) return false;
+
+      let ano: number = 0;
+      let mes: number = 0;
+
+      if (t.data.includes("-")) {
+        const partes = t.data.split("-").map(Number);
+        ano = partes[0];
+        mes = partes[1];
+      } else if (t.data.includes("/")) {
+        const partes = t.data.split("/").map(Number);
+        mes = partes[1];
+        ano = partes[2];
+      } else {
+        return false;
+      }
+
+      const tipoGasto = String(
+        t.tipoGasto ?? t.tipogasto ?? t.tipo_gasto ?? ""
+      ).toLowerCase();
+
+      return (
+        t.tipo === "despesa" &&
+        tipoGasto.includes("fixo") &&
+        mes === mesOrigemNum &&
+        ano === anoOrigemNum
+      );
+    });
+
+    if (gastosFixosMesAnterior.length === 0) {
+      alert(
+        `Nenhum gasto fixo foi encontrado no mês ${String(
+          mesOrigemNum
+        ).padStart(2, "0")}/${anoOrigemNum} para importar.`
+      );
+      return;
+    }
+
+    const strOrigem = `${String(mesOrigemNum).padStart(
+      2,
+      "0"
+    )}/${anoOrigemNum}`;
+    const strDestino = `${String(mesDestino).padStart(2, "0")}/${anoDestino}`;
+
+    const confirmacao = window.confirm(
+      `Encontramos ${gastosFixosMesAnterior.length} gasto(s) fixo(s) em ${strOrigem}. Deseja importá-los para ${strDestino} como PENDENTES?`
+    );
+
+    if (!confirmacao) return;
+
+    try {
+      for (const gasto of gastosFixosMesAnterior) {
+        let diaStr = "01";
+
+        if (gasto.data.includes("-")) {
+          diaStr = gasto.data.split("-")[2];
+        } else if (gasto.data.includes("/")) {
+          diaStr = gasto.data.split("/")[0];
+        }
+
+        const novaData = `${anoDestino}-${String(mesDestino).padStart(
+          2,
+          "0"
+        )}-${diaStr.padStart(2, "0")}`;
+
+        const novaTransacao: Omit<Transacao, "id"> = {
+          descricao: gasto.descricao,
+          valor: gasto.valor,
+          tipo: "despesa",
+          tipoGasto: "fixo",
+          categoria: gasto.categoria,
+          banco: gasto.banco,
+          pago: false,
+          data: novaData,
+        };
+
+        await handleAdicionarTransacao(novaTransacao);
+      }
+
+      alert(`Gastos fixos importados com sucesso para ${strDestino}!`);
+    } catch (error) {
+      console.error("Erro ao duplicar gastos fixos:", error);
+      alert("Ocorreu um erro ao importar alguns gastos.");
+    }
+  };
+
+  const handlePagarFaturaLote = async (ids: string[]) => {
+    try {
+      for (const id of ids) {
+        await fetchAutenticado(`/transacoes/${id}/pago`, {
+          method: "PATCH",
+          body: JSON.stringify({ pago: true }),
+        });
+      }
+
+      setTransacoes((prev) =>
+        prev.map((t) => (ids.includes(t.id) ? { ...t, pago: true } : t))
+      );
+
+      alert("Fatura quitada com sucesso!");
+    } catch (err) {
+      console.error("Erro ao quitar fatura:", err);
+      alert("Erro ao tentar quitar a fatura.");
+    }
+  };
 
   const handleDeletarTransacao = async (id: string) => {
     try {
@@ -356,7 +448,7 @@ export default function App() {
 
       if (response.ok) {
         setTransacoes((prev) =>
-          prev.map((t) => (t.id === id ? { ...t, pago: !t.pago } : t)),
+          prev.map((t) => (t.id === id ? { ...t, pago: !t.pago } : t))
         );
       }
     } catch (err) {
@@ -431,7 +523,16 @@ export default function App() {
 
         <AcoesRapidas onDuplicarGastosFixos={handleDuplicarGastosFixos} />
 
-        <FormularioTransacao onAdicionarTransacao={handleAdicionarTransacao} />
+        <FormularioCartao
+          onAdicionarCartao={handleAdicionarCartao}
+          cartoes={cartoes}
+          onDeletarCartao={handleDeletarCartao}
+        />
+
+        <FormularioTransacao
+          onAdicionarTransacao={handleAdicionarTransacao}
+          cartoes={cartoes}
+        />
 
         <div className="mt-8">
           <FiltrosTransacao
@@ -446,6 +547,7 @@ export default function App() {
             transacoes={transacoesFiltradasHistorico}
             onDeletarTransacao={handleDeletarTransacao}
             onAlternarPago={handleAlternarPago}
+            onPagarFaturaLote={handlePagarFaturaLote}
           />
         </div>
 
