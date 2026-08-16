@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { CartaoCredito } from "../types/cartao";
 import {
   opcoesBanco,
@@ -19,20 +19,27 @@ interface FormularioTransacaoProps {
   onAdicionarTransacao: (
     transacao: Omit<Transacao, "id">
   ) => Promise<void> | void;
+  onEditarTransacao?: (
+    id: string,
+    transacao: Omit<Transacao, "id">
+  ) => Promise<void> | void;
+  transacaoEmEdicao?: Transacao | null;
+  onCancelarEdicao?: () => void;
   cartoes?: CartaoCredito[];
 }
 
 export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
   onAdicionarTransacao,
+  onEditarTransacao,
+  transacaoEmEdicao,
+  onCancelarEdicao,
   cartoes = [],
 }) => {
   const [descricao, setDescricao] = useState("");
   const [valor, setValor] = useState("");
   const [tipo, setTipo] = useState<TipoTransacao>("despesa");
   const [tipoGasto, setTipoGasto] = useState<TipoGasto>("variavel");
-  const [metodoPagamento, setMetodoPagamento] = useState<MetodoPagamento>(
-    "pix"
-  );
+  const [metodoPagamento, setMetodoPagamento] = useState<MetodoPagamento>("pix");
   const [cartaoId, setCartaoId] = useState<string>("");
   const [totalParcelas, setTotalParcelas] = useState<number>(1);
   const [categoria, setCategoria] = useState<string>("Moradia");
@@ -40,6 +47,63 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
   const [bancoDestino, setBancoDestino] = useState<Banco>("Banco do Brasil");
   const [pago, setPago] = useState(true);
   const [data, setData] = useState(new Date().toISOString().split("T")[0]);
+
+  useEffect(() => {
+    if (transacaoEmEdicao) {
+      setDescricao(transacaoEmEdicao.descricao || "");
+      
+      const valorNum = Number(transacaoEmEdicao.valor || 0);
+      setValor(
+        new Intl.NumberFormat("pt-BR", {
+          style: "currency",
+          currency: "BRL",
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(valorNum)
+      );
+
+      setTipo(transacaoEmEdicao.tipo || "despesa");
+      
+      const tipoGastoBruto = (
+        transacaoEmEdicao.tipoGasto ?? 
+        transacaoEmEdicao.tipogasto ?? 
+        transacaoEmEdicao.tipo_gasto ?? 
+        "variavel"
+      ) as TipoGasto;
+      setTipoGasto(tipoGastoBruto.includes("fixo") ? "fixo" : "variavel");
+
+      setCategoria(transacaoEmEdicao.categoria || "Geral");
+      setBanco(transacaoEmEdicao.banco || "Geral");
+      setBancoDestino(transacaoEmEdicao.bancoDestino || transacaoEmEdicao.banco_destino || "Banco do Brasil");
+      setPago(transacaoEmEdicao.pago ?? true);
+      
+      if (transacaoEmEdicao.data) {
+        const dataFormatada = transacaoEmEdicao.data.split("T")[0];
+        setData(dataFormatada);
+      }
+
+      if (transacaoEmEdicao.metodoPagamento) {
+        setMetodoPagamento(transacaoEmEdicao.metodoPagamento);
+      }
+    } else {
+      resetForm();
+    }
+  }, [transacaoEmEdicao]);
+
+  const resetForm = () => {
+    setDescricao("");
+    setValor("");
+    setTipo("despesa");
+    setTipoGasto("variavel");
+    setMetodoPagamento("pix");
+    setCartaoId("");
+    setTotalParcelas(1);
+    setCategoria("Moradia");
+    setBanco("Nubank");
+    setBancoDestino("Banco do Brasil");
+    setPago(true);
+    setData(new Date().toISOString().split("T")[0]);
+  };
 
   const handleValorChange = (value: string) => {
     const digits = value.replace(/\D/g, "");
@@ -82,58 +146,15 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
           )
         : Number(valor);
 
-    // Tratamento para Compras no Cartão de Crédito com Parcelamento
-    if (tipo === "despesa" && metodoPagamento === "cartao_credito") {
-      const cartaoSelecionado = cartoes.find(
-        (c) => String(c.id) === String(cartaoId)
-      );
-
-      if (!cartaoSelecionado) {
-        alert("Selecione um cartão de crédito para continuar.");
-        return;
-      }
-
-      const valorParcela = valorNumerico / totalParcelas;
-
-      for (let i = 0; i < totalParcelas; i++) {
-        const dataVencimentoFatura = calcularVencimentoFatura(
-          data,
-          cartaoSelecionado,
-          i
-        );
-
-const novaTransacao: Omit<Transacao, "id"> = {
-          descricao:
-            totalParcelas > 1
-              ? `${descricao} (${i + 1}/${totalParcelas})`
-              : descricao,
-          valor: valorParcela,
-          tipo: "despesa",
-          tipoGasto,
-          tipogasto: tipoGasto,
-          categoria: "Cartão de Crédito",
-          banco: cartaoSelecionado.banco,
-          pago: false,
-          data: dataVencimentoFatura,
-          metodoPagamento: "cartao_credito",
-          cartaoId: String(cartaoSelecionado.id),
-          dataVencimentoFatura,
-          parcelaAtual: i + 1,
-          totalParcelas,
-        };
-
-        await onAdicionarTransacao(novaTransacao);
-      }
-    } else {
-      // Lançamento Padrão (Receita, Transferência ou Despesa Comum)
-      const novaTransacao: Omit<Transacao, "id"> = {
+    if (transacaoEmEdicao) {
+      // Edição de transação existente
+      const transacaoAtualizada: Omit<Transacao, "id"> = {
         descricao,
         valor: valorNumerico,
         tipo,
         tipoGasto: tipo === "despesa" ? tipoGasto : undefined,
         tipogasto: tipo === "despesa" ? tipoGasto : undefined,
-        categoria:
-          tipo === "transferencia" ? "Transferência" : categoria || "Geral",
+        categoria: tipo === "transferencia" ? "Transferência" : categoria || "Geral",
         banco: banco || "Geral",
         bancoDestino: tipo === "transferencia" ? bancoDestino : undefined,
         banco_destino: tipo === "transferencia" ? bancoDestino : undefined,
@@ -142,21 +163,92 @@ const novaTransacao: Omit<Transacao, "id"> = {
         metodoPagamento: tipo === "despesa" ? metodoPagamento : undefined,
       };
 
-      await onAdicionarTransacao(novaTransacao);
+      if (onEditarTransacao) {
+        await onEditarTransacao(transacaoEmEdicao.id, transacaoAtualizada);
+      }
+    } else {
+      // Inserção de nova transação
+      if (tipo === "despesa" && metodoPagamento === "cartao_credito") {
+        const cartaoSelecionado = cartoes.find(
+          (c) => String(c.id) === String(cartaoId)
+        );
+
+        if (!cartaoSelecionado) {
+          alert("Selecione um cartão de crédito para continuar.");
+          return;
+        }
+
+        const valorParcela = valorNumerico / totalParcelas;
+
+        for (let i = 0; i < totalParcelas; i++) {
+          const dataVencimentoFatura = calcularVencimentoFatura(
+            data,
+            cartaoSelecionado,
+            i
+          );
+
+          const novaTransacao: Omit<Transacao, "id"> = {
+            descricao:
+              totalParcelas > 1
+                ? `${descricao} (${i + 1}/${totalParcelas})`
+                : descricao,
+            valor: valorParcela,
+            tipo: "despesa",
+            tipoGasto,
+            tipogasto: tipoGasto,
+            categoria: "Cartão de Crédito",
+            banco: cartaoSelecionado.banco,
+            pago: false,
+            data: dataVencimentoFatura,
+            metodoPagamento: "cartao_credito",
+            cartaoId: String(cartaoSelecionado.id),
+            dataVencimentoFatura,
+            parcelaAtual: i + 1,
+            totalParcelas,
+          };
+
+          await onAdicionarTransacao(novaTransacao);
+        }
+      } else {
+        const novaTransacao: Omit<Transacao, "id"> = {
+          descricao,
+          valor: valorNumerico,
+          tipo,
+          tipoGasto: tipo === "despesa" ? tipoGasto : undefined,
+          tipogasto: tipo === "despesa" ? tipoGasto : undefined,
+          categoria:
+            tipo === "transferencia" ? "Transferência" : categoria || "Geral",
+          banco: banco || "Geral",
+          bancoDestino: tipo === "transferencia" ? bancoDestino : undefined,
+          banco_destino: tipo === "transferencia" ? bancoDestino : undefined,
+          pago,
+          data,
+          metodoPagamento: tipo === "despesa" ? metodoPagamento : undefined,
+        };
+
+        await onAdicionarTransacao(novaTransacao);
+      }
     }
 
-    setDescricao("");
-    setValor("");
-    setCategoria(tipo === "despesa" ? "Moradia" : "Salário");
-    setTipoGasto("variavel");
-    setTotalParcelas(1);
-    setCartaoId("");
+    resetForm();
+    if (onCancelarEdicao) onCancelarEdicao();
   };
 
   return (
     <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 mb-6 shadow-md shadow-slate-950/30">
-      <div className="mb-5 border-b border-slate-800 pb-4">
-        <h3 className="text-base font-semibold text-white">Nova Transação</h3>
+      <div className="mb-5 border-b border-slate-800 pb-4 flex items-center justify-between">
+        <h3 className="text-base font-semibold text-white">
+          {transacaoEmEdicao ? "Editar Transação" : "Nova Transação"}
+        </h3>
+        {transacaoEmEdicao && (
+          <button
+            type="button"
+            onClick={onCancelarEdicao}
+            className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl transition-colors"
+          >
+            Cancelar Edição
+          </button>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -254,7 +346,8 @@ const novaTransacao: Omit<Transacao, "id"> = {
                   setCategoria("Cartão de Crédito");
                 }
               }}
-              className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              disabled={!!transacaoEmEdicao}
+              className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {opcoesMetodoPagamento.map((opcao) => (
                 <option key={opcao.value} value={opcao.value}>
@@ -266,7 +359,7 @@ const novaTransacao: Omit<Transacao, "id"> = {
         )}
 
         {/* Campos Condicionais para Cartão de Crédito */}
-        {tipo === "despesa" && metodoPagamento === "cartao_credito" && (
+        {!transacaoEmEdicao && tipo === "despesa" && metodoPagamento === "cartao_credito" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="block text-xs font-medium text-slate-300">
@@ -351,7 +444,6 @@ const novaTransacao: Omit<Transacao, "id"> = {
             )}
           </div>
         ) : (
-          /* Campos Específicos para Transferência */
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="block text-xs font-medium text-slate-300">
@@ -359,7 +451,7 @@ const novaTransacao: Omit<Transacao, "id"> = {
               </label>
               <select
                 value={banco}
-                onChange={(e) => setBanco(e.target.value)}
+                onChange={(e) => setBanco(e.target.value as Banco)}
                 className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
               >
                 {opcoesBanco.map((opcao) => (
@@ -424,7 +516,7 @@ const novaTransacao: Omit<Transacao, "id"> = {
           type="submit"
           className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold py-2.5 px-4 rounded-xl transition-colors duration-200 shadow-sm shadow-emerald-900/30"
         >
-          Salvar Transação
+          {transacaoEmEdicao ? "Atualizar Transação" : "Salvar Transação"}
         </button>
       </form>
     </div>

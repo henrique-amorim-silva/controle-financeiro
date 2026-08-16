@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Header } from "./components/Header";
 import { DashboardResumo } from "./components/DashboardResumo";
 import { FormularioTransacao } from "./components/FormularioTransacao";
@@ -43,6 +43,10 @@ export default function App() {
 
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
   const [cartoes, setCartoes] = useState<CartaoCredito[]>([]);
+  const [transacaoEmEdicao, setTransacaoEmEdicao] = useState<Transacao | null>(null);
+
+  // Reference para scroll suave direto até o formulário
+  const formularioRef = useRef<HTMLDivElement>(null);
 
   const [mesFiltro, setMesFiltro] = useState<string>("2026-08");
 
@@ -239,6 +243,43 @@ export default function App() {
       setTransacoes((prev) => [normalizarTransacao(data), ...prev]);
     } catch (err) {
       console.error("Erro ao salvar transação:", err);
+    }
+  };
+
+  const handleEditarTransacao = async (
+    id: string,
+    transacaoAtualizada: Omit<Transacao, "id">
+  ) => {
+    try {
+      const response = await fetchAutenticado(`/transacoes/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(transacaoAtualizada),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(
+          `Erro ao atualizar transação: ${
+            data.erro || data.mensagem || "Falha no servidor"
+          }`
+        );
+        return;
+      }
+
+      setTransacoes((prev) =>
+        prev.map((t) => (t.id === id ? normalizarTransacao(data) : t))
+      );
+      setTransacaoEmEdicao(null);
+    } catch (err) {
+      console.error("Erro ao editar transação:", err);
+    }
+  };
+
+  const handleIniciarEdicao = (transacao: Transacao) => {
+    setTransacaoEmEdicao(transacao);
+    if (formularioRef.current) {
+      formularioRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
 
@@ -529,10 +570,15 @@ export default function App() {
           onDeletarCartao={handleDeletarCartao}
         />
 
-        <FormularioTransacao
-          onAdicionarTransacao={handleAdicionarTransacao}
-          cartoes={cartoes}
-        />
+        <div ref={formularioRef}>
+          <FormularioTransacao
+            onAdicionarTransacao={handleAdicionarTransacao}
+            onEditarTransacao={handleEditarTransacao}
+            transacaoEmEdicao={transacaoEmEdicao}
+            onCancelarEdicao={() => setTransacaoEmEdicao(null)}
+            cartoes={cartoes}
+          />
+        </div>
 
         <div className="mt-8">
           <FiltrosTransacao
@@ -547,6 +593,7 @@ export default function App() {
             transacoes={transacoesFiltradasHistorico}
             onDeletarTransacao={handleDeletarTransacao}
             onAlternarPago={handleAlternarPago}
+            onIniciarEdicao={handleIniciarEdicao}
             onPagarFaturaLote={handlePagarFaturaLote}
           />
         </div>

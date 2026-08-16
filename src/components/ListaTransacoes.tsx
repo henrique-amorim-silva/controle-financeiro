@@ -6,6 +6,7 @@ interface ListaTransacoesProps {
   transacoes: Transacao[];
   onDeletarTransacao: (id: string) => void;
   onAlternarPago: (id: string) => void;
+  onIniciarEdicao?: (transacao: Transacao) => void;
   onPagarFaturaLote?: (ids: string[]) => Promise<void> | void;
 }
 
@@ -13,6 +14,7 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
   transacoes,
   onDeletarTransacao,
   onAlternarPago,
+  onIniciarEdicao,
   onPagarFaturaLote: _onPagarFaturaLote,
 }) => {
   const [paginaAtual, setPaginaAtual] = useState(1);
@@ -120,7 +122,7 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
                     </span>
                   </td>
 
-                  {/* Banco (exibe origem -> destino em transferências) */}
+                  {/* Banco */}
                   <td className="p-3 text-slate-300">
                     {isTransferencia && bancoDestinoFinal ? (
                       <div className="flex items-center gap-1.5 font-medium">
@@ -151,26 +153,53 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
                     })}
                   </td>
 
+                  {/* Ações */}
                   <td className="p-3 text-center">
-                    <button
-                      onClick={() => onDeletarTransacao(t.id)}
-                      className="text-slate-500 hover:text-rose-400 transition-colors p-1 cursor-pointer"
-                      title="Excluir Lançamento"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                    <div className="flex items-center justify-center gap-2">
+                      {/* Botão de Editar */}
+                      {onIniciarEdicao && (
+                        <button
+                          onClick={() => onIniciarEdicao(t)}
+                          className="text-slate-500 hover:text-amber-400 transition-colors p-1 cursor-pointer"
+                          title="Editar Lançamento"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 012.828 0L20.5 5.828a2 2 0 010 2.828L11.828 17.172a2 2 0 01-.707.414l-4 1 1-4a2 2 0 01.414-.707l8.586-8.586z"
+                            />
+                          </svg>
+                        </button>
+                      )}
+
+                      {/* Botão de Excluir */}
+                      <button
+                        onClick={() => onDeletarTransacao(t.id)}
+                        className="text-slate-500 hover:text-rose-400 transition-colors p-1 cursor-pointer"
+                        title="Excluir Lançamento"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
