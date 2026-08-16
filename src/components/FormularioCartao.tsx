@@ -177,7 +177,7 @@ export const FormularioCartao: React.FC<FormularioCartaoProps> = ({
                     <div>
                       <p className="text-sm font-medium text-white">{cartao.nome}</p>
                       <p className="text-xs text-slate-400">
-                        {cartao.banco} | Limite: R$ {Number(cartao.limite).toFixed(2)}
+                        {cartao.banco} | Fecha dia: {cartao.diaFechamento} | Vence dia: {cartao.diaVencimento} | Limite: R$ {Number(cartao.limite).toFixed(2)}
                       </p>
                     </div>
                     <button
