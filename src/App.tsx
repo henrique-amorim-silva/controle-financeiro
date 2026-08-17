@@ -47,10 +47,8 @@ export default function App() {
   const [cartoes, setCartoes] = useState<CartaoCredito[]>([]);
   const [transacaoEmEdicao, setTransacaoEmEdicao] = useState<Transacao | null>(null);
 
-  // Estado para armazenar as metas por categoria (inicializa vazio e busca da API)
   const [metas, setMetas] = useState<MetaCategoria[]>([]);
 
-  // Reference para scroll suave direto até o formulário
   const formularioRef = useRef<HTMLDivElement>(null);
 
   const [mesFiltro, setMesFiltro] = useState<string>("2026-08");
@@ -70,10 +68,14 @@ export default function App() {
     const tipoGastoBruto =
       transacao.tipoGasto ?? transacao.tipogasto ?? transacao.tipo_gasto ?? "";
 
+    const metodoPagamentoBruto =
+      transacao.metodoPagamento ?? transacao.metodo_pagamento ?? "pix";
+
     return {
       ...transacao,
       valor: Number(String(transacao.valor ?? 0).replace(",", ".")),
       tipoGasto: String(tipoGastoBruto).trim().toLowerCase(),
+      metodoPagamento: String(metodoPagamentoBruto).trim().toLowerCase(),
       id: String(transacao.id ?? ""),
       data: String(transacao.data ?? ""),
     };
@@ -139,7 +141,6 @@ export default function App() {
       .catch((err) => console.error("Erro ao carregar cartões:", err));
   }, [token]);
 
-  // Carregar as metas via API do backend
   useEffect(() => {
     if (!token) return;
 
@@ -449,6 +450,7 @@ export default function App() {
           tipoGasto: "fixo",
           categoria: gasto.categoria,
           banco: gasto.banco,
+          metodoPagamento: gasto.metodoPagamento || gasto.metodo_pagamento || "pix",
           pago: false,
           data: novaData,
         };
@@ -497,19 +499,18 @@ export default function App() {
     }
   };
 
-  const handleAlternarPago = async (id: string) => {
+  const handleAlternarPago = async (transacao: Transacao) => {
     try {
-      const transacaoAtual = transacoes.find((t) => t.id === id);
-      if (!transacaoAtual) return;
-
-      const response = await fetchAutenticado(`/transacoes/${id}/pago`, {
+      const response = await fetchAutenticado(`/transacoes/${transacao.id}/pago`, {
         method: "PATCH",
-        body: JSON.stringify({ pago: !transacaoAtual.pago }),
+        body: JSON.stringify({ pago: !transacao.pago }),
       });
+      
+      console.log("Resposta do servidor:", response.status); // <--- E isso
 
       if (response.ok) {
         setTransacoes((prev) =>
-          prev.map((t) => (t.id === id ? { ...t, pago: !t.pago } : t))
+          prev.map((t) => (t.id === transacao.id ? { ...t, pago: !t.pago } : t))
         );
       }
     } catch (err) {
@@ -517,7 +518,6 @@ export default function App() {
     }
   };
 
-  // Funções de manipulação de metas integradas ao backend
   const handleAdicionarMeta = async (novaMeta: Omit<MetaCategoria, "id">) => {
     try {
       const response = await fetchAutenticado("/metas", {

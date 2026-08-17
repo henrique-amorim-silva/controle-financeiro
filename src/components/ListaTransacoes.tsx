@@ -5,13 +5,23 @@ import { formatarData } from "../utils/formatters";
 interface ListaTransacoesProps {
   transacoes: Transacao[];
   onDeletarTransacao: (id: string) => void;
-  onAlternarPago: (id: string) => void;
+  onAlternarPago: (transacao: Transacao) => void;
   onIniciarEdicao?: (transacao: Transacao) => void;
   onPagarFaturaLote?: (ids: string[]) => Promise<void> | void;
 }
 
+const formatarFormaPagamento = (metodo?: string) => {
+  if (!metodo) return "—";
+  const m = metodo.toLowerCase();
+  if (m.includes("cartao_credito") || m.includes("credito")) return "Cartão de Crédito";
+  if (m.includes("pix")) return "PIX";
+  if (m.includes("debito")) return "Débito";
+  if (m.includes("dinheiro")) return "Dinheiro";
+  return metodo;
+};
+
 export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
-  transacoes,
+  transacoes = [],
   onDeletarTransacao,
   onAlternarPago,
   onIniciarEdicao,
@@ -53,6 +63,7 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
               <th className="p-3">Data</th>
               <th className="p-3">Descrição</th>
               <th className="p-3">Classificação</th>
+              <th className="p-3">Forma de Pagamento</th>
               <th className="p-3">Categoria</th>
               <th className="p-3">Banco / Conta</th>
               <th className="p-3 text-right">Valor</th>
@@ -67,6 +78,9 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
 
               const bancoDestinoFinal = t.bancoDestino || t.banco_destino;
               const isTransferencia = t.tipo === "transferencia";
+              const estaPago = Boolean(t.pago);
+              const valorNumerico = Number(t.valor || 0);
+              const metodoPagamento = t.metodoPagamento || t.metodo_pagamento;
 
               return (
                 <tr
@@ -75,14 +89,14 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
                 >
                   <td className="p-3">
                     <button
-                      onClick={() => onAlternarPago(t.id)}
+                      onClick={() => onAlternarPago(t)}
                       className={`px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase cursor-pointer transition-colors ${
-                        t.pago
+                        estaPago
                           ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30"
                           : "bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30"
                       }`}
                     >
-                      {t.pago ? "Concluído" : "Pendente"}
+                      {estaPago ? "Concluído" : "Pendente"}
                     </button>
                   </td>
 
@@ -91,10 +105,9 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
                   </td>
 
                   <td className="p-3 font-medium text-slate-100">
-                    {t.descricao}
+                    {t.descricao || "(Sem Descrição)"}
                   </td>
 
-                  {/* Classificação */}
                   <td className="p-3">
                     {isTransferencia ? (
                       <span className="px-2 py-0.5 rounded-lg border text-[10px] font-medium bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
@@ -115,27 +128,30 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
                     )}
                   </td>
 
-                  {/* Categoria */}
+                  <td className="p-3">
+                    <span className="bg-slate-800/80 text-slate-300 px-2 py-0.5 rounded-lg border border-slate-700/50">
+                      {formatarFormaPagamento(metodoPagamento)}
+                    </span>
+                  </td>
+
                   <td className="p-3">
                     <span className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded-lg border border-slate-700/50">
                       {t.categoria || (isTransferencia ? "Transferência" : "Geral")}
                     </span>
                   </td>
 
-                  {/* Banco */}
                   <td className="p-3 text-slate-300">
                     {isTransferencia && bancoDestinoFinal ? (
                       <div className="flex items-center gap-1.5 font-medium">
-                        <span className="text-slate-300">{t.banco}</span>
+                        <span className="text-slate-300">{t.banco || "Geral"}</span>
                         <span className="text-cyan-400 font-bold">➔</span>
                         <span className="text-slate-200">{bancoDestinoFinal}</span>
                       </div>
                     ) : (
-                      <span className="text-slate-400">{t.banco}</span>
+                      <span className="text-slate-400">{t.banco || "Geral"}</span>
                     )}
                   </td>
 
-                  {/* Valor */}
                   <td
                     className={`p-3 text-right font-semibold whitespace-nowrap ${
                       isTransferencia
@@ -147,16 +163,14 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
                   >
                     {isTransferencia ? "↔ " : t.tipo === "receita" ? "+ " : "- "}
                     R${" "}
-                    {Number(t.valor).toLocaleString("pt-BR", {
+                    {valorNumerico.toLocaleString("pt-BR", {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
                   </td>
 
-                  {/* Ações */}
                   <td className="p-3 text-center">
                     <div className="flex items-center justify-center gap-2">
-                      {/* Botão de Editar */}
                       {onIniciarEdicao && (
                         <button
                           onClick={() => onIniciarEdicao(t)}
@@ -179,7 +193,6 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
                         </button>
                       )}
 
-                      {/* Botão de Excluir */}
                       <button
                         onClick={() => onDeletarTransacao(t.id)}
                         className="text-slate-500 hover:text-rose-400 transition-colors p-1 cursor-pointer"
@@ -259,3 +272,5 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
     </div>
   );
 };
+
+export default ListaTransacoes;

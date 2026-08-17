@@ -14,6 +14,7 @@ export const opcoesMetodoPagamento = [
   { value: 'debito', label: 'Débito' },
   { value: 'dinheiro', label: 'Dinheiro' },
   { value: 'cartao_credito', label: 'Cartão de Crédito' },
+  { value: 'transferencia', label: 'Trasferência' },
 ] as const;
 
 export const opcoesBanco = [
@@ -38,7 +39,6 @@ export const opcoesCategoriaDespesa = [
   'Lazer',
   'Educação',
   'Contas Fixas',
-  'Cartão de Crédito',
   'Investimentos',
   'Financiamento',
   'Empréstimo',
@@ -88,8 +88,8 @@ export interface Transacao {
   tipoGasto?: TipoGasto;
   tipogasto?: TipoGasto;
   tipo_gasto?: TipoGasto;
-
   metodoPagamento?: MetodoPagamento;
+  metodo_pagamento?: MetodoPagamento;
   cartaoId?: string;
   dataVencimentoFatura?: string;
   parcelaAtual?: number;

@@ -82,9 +82,12 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
         setData(dataFormatada);
       }
 
-      if (transacaoEmEdicao.metodoPagamento) {
-        setMetodoPagamento(transacaoEmEdicao.metodoPagamento);
-      }
+      const metodoBruto = (
+        transacaoEmEdicao.metodoPagamento ?? 
+        transacaoEmEdicao.metodo_pagamento ?? 
+        "pix"
+      ) as MetodoPagamento;
+      setMetodoPagamento(metodoBruto);
     } else {
       resetForm();
     }
@@ -147,7 +150,6 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
         : Number(valor);
 
     if (transacaoEmEdicao) {
-      // Edição de transação existente
       const transacaoAtualizada: Omit<Transacao, "id"> = {
         descricao,
         valor: valorNumerico,
@@ -160,14 +162,13 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
         banco_destino: tipo === "transferencia" ? bancoDestino : undefined,
         pago,
         data,
-        metodoPagamento: tipo === "despesa" ? metodoPagamento : undefined,
+        metodoPagamento,
       };
 
       if (onEditarTransacao) {
         await onEditarTransacao(transacaoEmEdicao.id, transacaoAtualizada);
       }
     } else {
-      // Inserção de nova transação
       if (tipo === "despesa" && metodoPagamento === "cartao_credito") {
         const cartaoSelecionado = cartoes.find(
           (c) => String(c.id) === String(cartaoId)
@@ -196,7 +197,7 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
             tipo: "despesa",
             tipoGasto,
             tipogasto: tipoGasto,
-            categoria: "Cartão de Crédito",
+            categoria: categoria || "Geral",
             banco: cartaoSelecionado.banco,
             pago: false,
             data: dataVencimentoFatura,
@@ -223,7 +224,7 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
           banco_destino: tipo === "transferencia" ? bancoDestino : undefined,
           pago,
           data,
-          metodoPagamento: tipo === "despesa" ? metodoPagamento : undefined,
+          metodoPagamento,
         };
 
         await onAdicionarTransacao(novaTransacao);
@@ -330,35 +331,29 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
           )}
         </div>
 
-        {/* Método de Pagamento para Despesas */}
-        {tipo === "despesa" && (
-          <div className="space-y-2">
-            <label className="block text-xs font-medium text-slate-300">
-              Forma de Pagamento
-            </label>
-            <select
-              value={metodoPagamento}
-              onChange={(e) => {
-                const metodo = e.target.value as MetodoPagamento;
-                setMetodoPagamento(metodo);
-                if (metodo === "cartao_credito") {
-                  setPago(false);
-                  setCategoria("Cartão de Crédito");
-                }
-              }}
-              disabled={!!transacaoEmEdicao}
-              className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {opcoesMetodoPagamento.map((opcao) => (
-                <option key={opcao.value} value={opcao.value}>
-                  {opcao.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+        <div className="space-y-2">
+          <label className="block text-xs font-medium text-slate-300">
+            Forma de Pagamento
+          </label>
+          <select
+            value={metodoPagamento}
+            onChange={(e) => {
+              const metodo = e.target.value as MetodoPagamento;
+              setMetodoPagamento(metodo);
+              if (metodo === "cartao_credito" && !transacaoEmEdicao) {
+                setPago(false);
+              }
+            }}
+            className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+          >
+            {opcoesMetodoPagamento.map((opcao) => (
+              <option key={opcao.value} value={opcao.value}>
+                {opcao.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        {/* Campos Condicionais para Cartão de Crédito */}
         {!transacaoEmEdicao && tipo === "despesa" && metodoPagamento === "cartao_credito" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -408,10 +403,7 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
               <select
                 value={categoria}
                 onChange={(e) => setCategoria(e.target.value)}
-                disabled={
-                  tipo === "despesa" && metodoPagamento === "cartao_credito"
-                }
-                className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
               >
                 {(tipo === "despesa"
                   ? opcoesCategoriaDespesa
@@ -494,23 +486,21 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
           />
         </div>
 
-        {metodoPagamento !== "cartao_credito" && (
-          <div className="flex items-center gap-3 pt-1">
-            <input
-              id="pago"
-              type="checkbox"
-              checked={pago}
-              onChange={(e) => setPago(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-600 bg-slate-950 text-emerald-500 focus:ring-emerald-500"
-            />
-            <label
-              htmlFor="pago"
-              className="text-sm text-slate-300 cursor-pointer"
-            >
-              Pago / Concluído
-            </label>
-          </div>
-        )}
+        <div className="flex items-center gap-3 pt-1">
+          <input
+            id="pago"
+            type="checkbox"
+            checked={pago}
+            onChange={(e) => setPago(e.target.checked)}
+            className="h-4 w-4 rounded border-slate-600 bg-slate-950 text-emerald-500 focus:ring-emerald-500"
+          />
+          <label
+            htmlFor="pago"
+            className="text-sm text-slate-300 cursor-pointer"
+          >
+            Pago / Concluído
+          </label>
+        </div>
 
         <button
           type="submit"

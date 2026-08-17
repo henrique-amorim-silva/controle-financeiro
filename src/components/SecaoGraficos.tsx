@@ -19,7 +19,7 @@ type TipoGrafico =
   | "receitas_desc"
   | "despesas_cat"
   | "despesas_desc"
-  | "cartao_desc"
+  | "cartao_cat"
   | "investimentos_desc";
 
 const CORES = [
@@ -129,18 +129,25 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
       .sort((a, b) => b.value - a.value);
   }, [transacoes]);
 
-  // 6. Cartão de Crédito x Descrição
-  const dadosCartaoDesc = useMemo(() => {
+  // 6. Cartão de Crédito por Categoria
+  const dadosCartaoCat = useMemo(() => {
     const mapa: Record<string, number> = {};
     transacoes
-      .filter(
-        (t) =>
-          t.tipo === "despesa" &&
-          normalizarTexto(t.categoria || "").includes("cartao de credito")
-      )
+      .filter((t) => {
+        if (t.tipo !== "despesa") return false;
+
+        const formaPagamento = normalizarTexto(
+          t.metodoPagamento || t.metodo_pagamento || ""
+        );
+        
+        return (
+          formaPagamento.includes("cartao") ||
+          formaPagamento.includes("credito")
+        );
+      })
       .forEach((t) => {
-        const desc = t.descricao || "Sem Descrição";
-        mapa[desc] = (mapa[desc] || 0) + Number(t.valor);
+        const cat = t.categoria || "Outros";
+        mapa[cat] = (mapa[cat] || 0) + Number(t.valor);
       });
 
     return Object.entries(mapa)
@@ -178,8 +185,8 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
         return dadosDespesasCat;
       case "despesas_desc":
         return dadosDespesasDesc;
-      case "cartao_desc":
-        return dadosCartaoDesc;
+      case "cartao_cat":
+        return dadosCartaoCat;
       case "investimentos_desc":
         return dadosInvestimentosDesc;
       default:
@@ -192,11 +199,10 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
     dadosReceitasDesc,
     dadosDespesasCat,
     dadosDespesasDesc,
-    dadosCartaoDesc,
+    dadosCartaoCat,
     dadosInvestimentosDesc,
   ]);
 
-  // Cálculo do valor total exibido no gráfico
   const totalValor = useMemo(
     () => dadosAtuais.reduce((acc, item) => acc + item.value, 0),
     [dadosAtuais]
@@ -257,17 +263,23 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
               <option value="receitas_desc">Receitas por Descrição (%)</option>
               <option value="despesas_cat">Despesas por Categoria (%)</option>
               <option value="despesas_desc">Despesas por Descrição (%)</option>
-              <option value="cartao_desc">Cartão de Crédito por Descrição (%)</option>
-              <option value="investimentos_desc">Investimentos por Descrição (%)</option>
+              <option value="cartao_cat">
+                Cartão de Crédito por Categoria (%)
+              </option>
+              <option value="investimentos_desc">
+                Investimentos por Descrição (%)
+              </option>
             </select>
           </div>
 
-          {/* EXIBIÇÃO DO VALOR TOTAL DO GRÁFICO */}
           {dadosAtuais.length > 0 && (
             <div className="flex items-center justify-between bg-slate-950/60 border border-slate-800/80 rounded-xl px-4 py-2.5">
-              <span className="text-xs text-slate-400 font-medium">Total Analisado:</span>
+              <span className="text-xs text-slate-400 font-medium">
+                Total Analisado:
+              </span>
               <span className="text-sm font-bold text-emerald-400">
-                R$ {totalValor.toLocaleString("pt-BR", {
+                R${" "}
+                {totalValor.toLocaleString("pt-BR", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}
