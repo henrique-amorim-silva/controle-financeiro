@@ -33,7 +33,7 @@ const normalizarTexto = (texto: string) =>
 
 export default function App() {
   const [token, setToken] = useState<string | null>(() =>
-    localStorage.getItem("token")
+    localStorage.getItem("token"),
   );
   const [usuario, setUsuario] = useState<{
     nome: string;
@@ -45,7 +45,9 @@ export default function App() {
 
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
   const [cartoes, setCartoes] = useState<CartaoCredito[]>([]);
-  const [transacaoEmEdicao, setTransacaoEmEdicao] = useState<Transacao | null>(null);
+  const [transacaoEmEdicao, setTransacaoEmEdicao] = useState<Transacao | null>(
+    null,
+  );
 
   const [metas, setMetas] = useState<MetaCategoria[]>([]);
 
@@ -93,7 +95,7 @@ export default function App() {
 
   const fetchAutenticado = async (
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
   ) => {
     const headers = {
       "Content-Type": "application/json",
@@ -190,7 +192,7 @@ export default function App() {
       if (filtros.tipoGasto !== "todos") {
         if (t.tipo !== "despesa") return false;
         const tipoGastoItem = String(
-          t.tipoGasto ?? t.tipogasto ?? t.tipo_gasto ?? ""
+          t.tipoGasto ?? t.tipogasto ?? t.tipo_gasto ?? "",
         )
           .trim()
           .toLowerCase();
@@ -212,7 +214,7 @@ export default function App() {
       if (
         filtros.descricao.trim() !== "" &&
         !normalizarTexto(t.descricao).includes(
-          normalizarTexto(filtros.descricao)
+          normalizarTexto(filtros.descricao),
         )
       ) {
         return false;
@@ -242,7 +244,7 @@ export default function App() {
   };
 
   const handleAdicionarTransacao = async (
-    novaTransacao: Omit<Transacao, "id">
+    novaTransacao: Omit<Transacao, "id">,
   ) => {
     try {
       const response = await fetchAutenticado("/transacoes", {
@@ -256,7 +258,7 @@ export default function App() {
         alert(
           `Erro ao salvar transação: ${
             data.erro || data.mensagem || "Falha no servidor"
-          }`
+          }`,
         );
         return;
       }
@@ -269,7 +271,7 @@ export default function App() {
 
   const handleEditarTransacao = async (
     id: string,
-    transacaoAtualizada: Omit<Transacao, "id">
+    transacaoAtualizada: Omit<Transacao, "id">,
   ) => {
     try {
       const response = await fetchAutenticado(`/transacoes/${id}`, {
@@ -283,13 +285,13 @@ export default function App() {
         alert(
           `Erro ao atualizar transação: ${
             data.erro || data.mensagem || "Falha no servidor"
-          }`
+          }`,
         );
         return;
       }
 
       setTransacoes((prev) =>
-        prev.map((t) => (t.id === id ? normalizarTransacao(data) : t))
+        prev.map((t) => (t.id === id ? normalizarTransacao(data) : t)),
       );
       setTransacaoEmEdicao(null);
     } catch (err) {
@@ -300,12 +302,15 @@ export default function App() {
   const handleIniciarEdicao = (transacao: Transacao) => {
     setTransacaoEmEdicao(transacao);
     if (formularioRef.current) {
-      formularioRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      formularioRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     }
   };
 
   const handleAdicionarCartao = async (
-    novoCartao: Omit<CartaoCredito, "id">
+    novoCartao: Omit<CartaoCredito, "id">,
   ) => {
     try {
       const response = await fetchAutenticado("/cartoes", {
@@ -319,7 +324,7 @@ export default function App() {
         alert(
           `Erro ao cadastrar cartão: ${
             data.erro || data.mensagem || "Falha no servidor"
-          }`
+          }`,
         );
         return;
       }
@@ -346,7 +351,7 @@ export default function App() {
         data = rawText ? JSON.parse(rawText) : {};
       } catch {
         throw new Error(
-          `Servidor retornou erro (${response.status}). Certifique-se de ter reiniciado o backend para carregar a rota DELETE.`
+          `Servidor retornou erro (${response.status}). Certifique-se de ter reiniciado o backend para carregar a rota DELETE.`,
         );
       }
 
@@ -366,7 +371,7 @@ export default function App() {
   const handleDuplicarGastosFixos = async () => {
     if (!mesFiltro) {
       alert(
-        "Por favor, selecione um mês de referência no filtro superior para realizar a importação."
+        "Por favor, selecione um mês de referência no filtro superior para realizar a importação.",
       );
       return;
     }
@@ -396,7 +401,7 @@ export default function App() {
       }
 
       const tipoGasto = String(
-        t.tipoGasto ?? t.tipogasto ?? t.tipo_gasto ?? ""
+        t.tipoGasto ?? t.tipogasto ?? t.tipo_gasto ?? "",
       ).toLowerCase();
 
       return (
@@ -410,20 +415,20 @@ export default function App() {
     if (gastosFixosMesAnterior.length === 0) {
       alert(
         `Nenhum gasto fixo foi encontrado no mês ${String(
-          mesOrigemNum
-        ).padStart(2, "0")}/${anoOrigemNum} para importar.`
+          mesOrigemNum,
+        ).padStart(2, "0")}/${anoOrigemNum} para importar.`,
       );
       return;
     }
 
     const strOrigem = `${String(mesOrigemNum).padStart(
       2,
-      "0"
+      "0",
     )}/${anoOrigemNum}`;
     const strDestino = `${String(mesDestino).padStart(2, "0")}/${anoDestino}`;
 
     const confirmacao = window.confirm(
-      `Encontramos ${gastosFixosMesAnterior.length} gasto(s) fixo(s) em ${strOrigem}. Deseja importá-los para ${strDestino} como PENDENTES?`
+      `Encontramos ${gastosFixosMesAnterior.length} gasto(s) fixo(s) em ${strOrigem}. Deseja importá-los para ${strDestino} como PENDENTES?`,
     );
 
     if (!confirmacao) return;
@@ -440,7 +445,7 @@ export default function App() {
 
         const novaData = `${anoDestino}-${String(mesDestino).padStart(
           2,
-          "0"
+          "0",
         )}-${diaStr.padStart(2, "0")}`;
 
         const novaTransacao: Omit<Transacao, "id"> = {
@@ -450,7 +455,8 @@ export default function App() {
           tipoGasto: "fixo",
           categoria: gasto.categoria,
           banco: gasto.banco,
-          metodoPagamento: gasto.metodoPagamento || gasto.metodo_pagamento || "pix",
+          metodoPagamento:
+            gasto.metodoPagamento || gasto.metodo_pagamento || "pix",
           pago: false,
           data: novaData,
         };
@@ -475,7 +481,7 @@ export default function App() {
       }
 
       setTransacoes((prev) =>
-        prev.map((t) => (ids.includes(t.id) ? { ...t, pago: true } : t))
+        prev.map((t) => (ids.includes(t.id) ? { ...t, pago: true } : t)),
       );
 
       alert("Fatura quitada com sucesso!");
@@ -501,16 +507,21 @@ export default function App() {
 
   const handleAlternarPago = async (transacao: Transacao) => {
     try {
-      const response = await fetchAutenticado(`/transacoes/${transacao.id}/pago`, {
-        method: "PATCH",
-        body: JSON.stringify({ pago: !transacao.pago }),
-      });
-      
+      const response = await fetchAutenticado(
+        `/transacoes/${transacao.id}/pago`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ pago: !transacao.pago }),
+        },
+      );
+
       console.log("Resposta do servidor:", response.status); // <--- E isso
 
       if (response.ok) {
         setTransacoes((prev) =>
-          prev.map((t) => (t.id === transacao.id ? { ...t, pago: !t.pago } : t))
+          prev.map((t) =>
+            t.id === transacao.id ? { ...t, pago: !t.pago } : t,
+          ),
         );
       }
     } catch (err) {
@@ -528,7 +539,9 @@ export default function App() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(`Erro ao cadastrar meta: ${data.mensagem || "Falha no servidor"}`);
+        alert(
+          `Erro ao cadastrar meta: ${data.mensagem || "Falha no servidor"}`,
+        );
         return;
       }
 

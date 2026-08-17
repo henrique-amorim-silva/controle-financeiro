@@ -43,6 +43,8 @@ export const opcoesCategoriaDespesa = [
   'Financiamento',
   'Empréstimo',
   'Combustível',
+  'Vestimenta',
+  'PET',
   'Outros',
 ] as const;
 
