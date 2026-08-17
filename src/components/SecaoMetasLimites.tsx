@@ -117,7 +117,7 @@ export function SecaoMetasLimites({
             <h2 className="text-lg font-bold text-white">Metas e Limites por Categoria</h2>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Acompanhe seus teto de gastos e metas de investimento mensais
+            Defina seus gastos e metas de investimento mensais
           </p>
         </div>
 
