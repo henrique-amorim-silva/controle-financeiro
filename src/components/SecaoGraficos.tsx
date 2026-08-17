@@ -20,6 +20,7 @@ type TipoGrafico =
   | "despesas_cat"
   | "despesas_desc"
   | "cartao_cat"
+  | "cartao_desc"
   | "investimentos_desc";
 
 const CORES = [
@@ -155,7 +156,33 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
       .sort((a, b) => b.value - a.value);
   }, [transacoes]);
 
-  // 7. Investimentos x Descrição
+  // 7. Cartão de Crédito por Descrição (Novo)
+  const dadosCartaoDesc = useMemo(() => {
+    const mapa: Record<string, number> = {};
+    transacoes
+      .filter((t) => {
+        if (t.tipo !== "despesa") return false;
+
+        const formaPagamento = normalizarTexto(
+          t.metodoPagamento || t.metodo_pagamento || ""
+        );
+        
+        return (
+          formaPagamento.includes("cartao") ||
+          formaPagamento.includes("credito")
+        );
+      })
+      .forEach((t) => {
+        const desc = t.descricao || "Sem Descrição";
+        mapa[desc] = (mapa[desc] || 0) + Number(t.valor);
+      });
+
+    return Object.entries(mapa)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [transacoes]);
+
+  // 8. Investimentos x Descrição
   const dadosInvestimentosDesc = useMemo(() => {
     const mapa: Record<string, number> = {};
     transacoes
@@ -187,6 +214,8 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
         return dadosDespesasDesc;
       case "cartao_cat":
         return dadosCartaoCat;
+      case "cartao_desc":
+        return dadosCartaoDesc;
       case "investimentos_desc":
         return dadosInvestimentosDesc;
       default:
@@ -200,6 +229,7 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
     dadosDespesasCat,
     dadosDespesasDesc,
     dadosCartaoCat,
+    dadosCartaoDesc,
     dadosInvestimentosDesc,
   ]);
 
@@ -265,6 +295,9 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
               <option value="despesas_desc">Despesas por Descrição (%)</option>
               <option value="cartao_cat">
                 Cartão de Crédito por Categoria (%)
+              </option>
+              <option value="cartao_desc">
+                Cartão de Crédito por Descrição (%)
               </option>
               <option value="investimentos_desc">
                 Investimentos por Descrição (%)
