@@ -62,13 +62,42 @@ export function SecaoMetasLimites({
     (m) => m.frequencia === "fixo" || m.mes === mesAtual
   );
 
+  const handleValorChange = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    if (!digits) {
+      setValorMeta("");
+      return;
+    }
+
+    const numericValue = Number(digits) / 100;
+    setValorMeta(
+      new Intl.NumberFormat("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(numericValue)
+    );
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!categoriaSel || !valorMeta || Number(valorMeta) <= 0) return;
+
+    const valorNumerico =
+      typeof valorMeta === "string"
+        ? Number(
+            valorMeta
+              .replace(/[^\d,.-]/g, "")
+              .replace(/\./g, "")
+              .replace(",", ".")
+          )
+        : Number(valorMeta);
+
+    if (!categoriaSel || !valorMeta || valorNumerico <= 0 || isNaN(valorNumerico)) return;
 
     onAdicionarMeta({
       categoria: categoriaSel,
-      valorMeta: Number(valorMeta),
+      valorMeta: valorNumerico,
       tipo,
       frequencia,
       mes: frequencia === "mensal" ? mesAtual : undefined,
@@ -136,11 +165,10 @@ export function SecaoMetasLimites({
           <div>
             <label className="text-xs text-slate-400 block mb-1">Valor Meta (R$)</label>
             <input
-              type="number"
-              step="0.01"
-              placeholder="0,00"
+              type="text"
+              placeholder="R$ 0,00"
               value={valorMeta}
-              onChange={(e) => setValorMeta(e.target.value)}
+              onChange={(e) => handleValorChange(e.target.value)}
               required
               className="w-full bg-slate-900 border border-slate-700 text-white text-xs rounded-lg p-2.5 outline-none focus:border-emerald-500"
             />
