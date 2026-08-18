@@ -49,7 +49,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSucesso }) => {
         localStorage.setItem('usuario', JSON.stringify(data.usuario));
         onLoginSucesso(data.token, data.usuario);
       }
-    } catch (err) {
+    } catch (_err) {
       setErro('Erro de conexão com o servidor.');
     }
   };
@@ -111,11 +111,21 @@ export const Login: React.FC<LoginProps> = ({ onLoginSucesso }) => {
       </form>
 
       <p
+        role="button"
+        tabIndex={0}
         style={{ marginTop: '16px', textAlign: 'center', cursor: 'pointer', color: '#7dd3fc', fontSize: '14px' }}
         onClick={() => { setModoCadastro(!modoCadastro); setErro(''); }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            setModoCadastro(!modoCadastro);
+            setErro('');
+          }
+        }}
       >
         {modoCadastro ? 'Já tem uma conta? Faça login' : 'Não tem conta? Cadastre-se'}
       </p>
     </div>
   );
 };
+
+export default Login;

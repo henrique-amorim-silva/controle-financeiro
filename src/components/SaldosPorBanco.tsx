@@ -38,7 +38,7 @@ export const SaldosPorBanco: React.FC<SaldosPorBancoProps> = ({ transacoes }) =>
   }, {});
 
   const bancosComSaldo = Object.entries(saldos);
-  const saldoTotalGeral = bancosComSaldo.reduce((acc, [_, valor]) => acc + Number(valor), 0);
+  const saldoTotalGeral = bancosComSaldo.reduce((acc, [, valor]) => acc + Number(valor), 0);
 
   if (bancosComSaldo.length === 0) return null;
 
@@ -89,3 +89,5 @@ export const SaldosPorBanco: React.FC<SaldosPorBancoProps> = ({ transacoes }) =>
     </div>
   );
 };
+
+export default SaldosPorBanco;

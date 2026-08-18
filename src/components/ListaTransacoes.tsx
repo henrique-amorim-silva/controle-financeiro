@@ -89,6 +89,7 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
                 >
                   <td className="p-3">
                     <button
+                      type="button"
                       onClick={() => onAlternarPago(t)}
                       className={`px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase cursor-pointer transition-colors ${
                         estaPago
@@ -173,6 +174,7 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
                     <div className="flex items-center justify-center gap-2">
                       {onIniciarEdicao && (
                         <button
+                          type="button"
                           onClick={() => onIniciarEdicao(t)}
                           className="text-slate-500 hover:text-amber-400 transition-colors p-1 cursor-pointer"
                           title="Editar Lançamento"
@@ -194,6 +196,7 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
                       )}
 
                       <button
+                        type="button"
                         onClick={() => onDeletarTransacao(t.id)}
                         className="text-slate-500 hover:text-rose-400 transition-colors p-1 cursor-pointer"
                         title="Excluir Lançamento"
@@ -246,6 +249,7 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
 
           <div className="flex items-center gap-1">
             <button
+              type="button"
               onClick={() => setPaginaAtual((prev) => Math.max(prev - 1, 1))}
               disabled={paginaAtual === 1}
               className="px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-800 transition-colors font-medium cursor-pointer"
@@ -258,6 +262,7 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
             </span>
 
             <button
+              type="button"
               onClick={() =>
                 setPaginaAtual((prev) => Math.min(prev + 1, totalPaginas))
               }

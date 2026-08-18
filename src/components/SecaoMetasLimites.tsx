@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import type { MetaCategoria } from "../types/meta";
 import type { Transacao } from "../types/finance";
 import { opcoesCategoriaDespesa } from "../types/finance";
@@ -324,3 +324,5 @@ export function SecaoMetasLimites({
     </div>
   );
 }
+
+export default SecaoMetasLimites;

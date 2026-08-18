@@ -27,3 +27,5 @@ export function calcularVencimentoFatura(
 
   return `${anoFinal}-${mesFinal}-${diaFinal}`;
 }
+
+export default calcularVencimentoFatura;

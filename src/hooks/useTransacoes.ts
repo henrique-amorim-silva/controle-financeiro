@@ -26,14 +26,14 @@ export function useTransacoes(
     dataFim: "",
   });
 
-  const normalizarTransacao = (transacao: any): Transacao => {
+  const normalizarTransacao = (transacao: Record<string, unknown>): Transacao => {
     const tipoGastoBruto =
       transacao.tipoGasto ?? transacao.tipogasto ?? transacao.tipo_gasto ?? "";
     const metodoPagamentoBruto =
       transacao.metodoPagamento ?? transacao.metodo_pagamento ?? "pix";
 
     return {
-      ...transacao,
+      ...(transacao as unknown as Transacao),
       valor: Number(String(transacao.valor ?? 0).replace(",", ".")),
       tipoGasto: String(tipoGastoBruto).trim().toLowerCase(),
       metodoPagamento: String(metodoPagamentoBruto).trim().toLowerCase(),
@@ -49,11 +49,11 @@ export function useTransacoes(
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          setTransacoes(data.map(normalizarTransacao));
+          setTransacoes(data.map((item) => normalizarTransacao(item as Record<string, unknown>)));
         }
       })
       .catch((err) => console.error("Erro ao carregar transações:", err));
-  }, [token]);
+  }, [token, fetchAutenticado]);
 
   const bancosUnicos = useMemo(() => {
     if (!Array.isArray(transacoes)) return [];
@@ -89,8 +89,9 @@ export function useTransacoes(
 
       if (filtros.tipoGasto !== "todos") {
         if (t.tipo !== "despesa") return false;
+        const tObj = t as unknown as Record<string, unknown>;
         const tipoGastoItem = String(
-          t.tipoGasto ?? t.tipogasto ?? t.tipo_gasto ?? ""
+          t.tipoGasto ?? tObj.tipogasto ?? tObj.tipo_gasto ?? ""
         )
           .trim()
           .toLowerCase();
@@ -157,7 +158,7 @@ export function useTransacoes(
         return;
       }
 
-      setTransacoes((prev) => [normalizarTransacao(data), ...prev]);
+      setTransacoes((prev) => [normalizarTransacao(data as Record<string, unknown>), ...prev]);
     } catch (err) {
       console.error("Erro ao salvar transação:", err);
     }
@@ -185,7 +186,7 @@ export function useTransacoes(
       }
 
       setTransacoes((prev) =>
-        prev.map((t) => (t.id === id ? normalizarTransacao(data) : t))
+        prev.map((t) => (t.id === id ? normalizarTransacao(data as Record<string, unknown>) : t))
       );
       setTransacaoEmEdicao(null);
     } catch (err) {
@@ -290,8 +291,9 @@ export function useTransacoes(
         return false;
       }
 
+      const tObj = t as unknown as Record<string, unknown>;
       const tipoGasto = String(
-        t.tipoGasto ?? t.tipogasto ?? t.tipo_gasto ?? ""
+        t.tipoGasto ?? tObj.tipogasto ?? tObj.tipo_gasto ?? ""
       ).toLowerCase();
 
       return (
@@ -333,6 +335,7 @@ export function useTransacoes(
           "0"
         )}-${diaStr.padStart(2, "0")}`;
 
+        const gastoObj = gasto as unknown as Record<string, unknown>;
         const novaTransacao: Omit<Transacao, "id"> = {
           descricao: gasto.descricao,
           valor: gasto.valor,
@@ -341,7 +344,7 @@ export function useTransacoes(
           categoria: gasto.categoria,
           banco: gasto.banco,
           metodoPagamento:
-            gasto.metodoPagamento || gasto.metodo_pagamento || "pix",
+            gasto.metodoPagamento || (gastoObj.metodo_pagamento as string) || "pix",
           pago: false,
           data: novaData,
         };
@@ -379,3 +382,5 @@ export function useTransacoes(
     handleDuplicarGastosFixos,
   };
 }
+
+export default useTransacoes;

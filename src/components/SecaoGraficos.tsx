@@ -156,7 +156,7 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
       .sort((a, b) => b.value - a.value);
   }, [transacoes]);
 
-  // 7. Cartão de Crédito por Descrição (Novo)
+  // 7. Cartão de Crédito por Descrição
   const dadosCartaoDesc = useMemo(() => {
     const mapa: Record<string, number> = {};
     transacoes
@@ -241,7 +241,14 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
   return (
     <div className="bg-slate-900/80 border border-slate-800 rounded-2xl mb-6 shadow-md shadow-slate-950/30 overflow-hidden transition-all">
       <div
+        role="button"
+        tabIndex={0}
         onClick={() => setIsAberto(!isAberto)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            setIsAberto(!isAberto);
+          }
+        }}
         className="w-full p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800/50 transition-colors select-none"
       >
         <div className="flex items-center gap-2">
@@ -348,7 +355,7 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value: any) => {
+                    formatter={(value: unknown) => {
                       const valNum = Number(value ?? 0);
                       return [
                         `R$ ${valNum.toLocaleString("pt-BR", {
@@ -384,3 +391,5 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
     </div>
   );
 };
+
+export default SecaoGraficos;

@@ -18,7 +18,7 @@ export function useCartoes(
         }
       })
       .catch((err) => console.error("Erro ao carregar cartões:", err));
-  }, [token]);
+  }, [token, fetchAutenticado]);
 
   const handleAdicionarCartao = async (
     novoCartao: Omit<CartaoCredito, "id">
@@ -56,10 +56,10 @@ export function useCartoes(
       });
 
       const rawText = await response.text();
-      let data: any = {};
+      let data: Record<string, unknown> = {};
 
       try {
-        data = rawText ? JSON.parse(rawText) : {};
+        data = rawText ? (JSON.parse(rawText) as Record<string, unknown>) : {};
       } catch {
         throw new Error(
           `Servidor retornou erro (${response.status}). Certifique-se de ter reiniciado o backend para carregar a rota DELETE.`
@@ -67,15 +67,16 @@ export function useCartoes(
       }
 
       if (!response.ok) {
-        alert(data.mensagem || "Não foi possível excluir o cartão.");
+        alert(String(data.mensagem || "Não foi possível excluir o cartão."));
         return;
       }
 
       setCartoes((prev) => prev.filter((c) => Number(c.id) !== id));
-      alert(data.mensagem || "Cartão excluído com sucesso!");
-    } catch (err: any) {
+      alert(String(data.mensagem || "Cartão excluído com sucesso!"));
+    } catch (err: unknown) {
       console.error("Erro ao excluir cartão:", err);
-      alert(err.message || "Erro de conexão ao tentar excluir o cartão.");
+      const mensagemErro = err instanceof Error ? err.message : "Erro de conexão ao tentar excluir o cartão.";
+      alert(mensagemErro);
     }
   };
 
@@ -86,3 +87,5 @@ export function useCartoes(
     handleDeletarCartao,
   };
 }
+
+export default useCartoes;

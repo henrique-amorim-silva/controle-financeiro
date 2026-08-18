@@ -14,7 +14,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const savedTheme = localStorage.getItem('@finance_app_theme') as Theme;
     if (savedTheme) return savedTheme;
     // Padrão escuro ou de acordo com o sistema do usuário
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
   useEffect(() => {
@@ -45,3 +45,5 @@ export const useTheme = () => {
   }
   return context;
 };
+
+export default ThemeProvider;

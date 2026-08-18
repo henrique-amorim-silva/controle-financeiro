@@ -18,7 +18,7 @@ export function useMetas(
         }
       })
       .catch((err) => console.error("Erro ao carregar metas:", err));
-  }, [token]);
+  }, [token, fetchAutenticado]);
 
   const handleAdicionarMeta = async (novaMeta: Omit<MetaCategoria, "id">) => {
     try {
@@ -66,3 +66,5 @@ export function useMetas(
     handleDeletarMeta,
   };
 }
+
+export default useMetas;

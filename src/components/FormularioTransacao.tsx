@@ -48,6 +48,21 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
   const [pago, setPago] = useState(true);
   const [data, setData] = useState(new Date().toISOString().split("T")[0]);
 
+  const resetForm = () => {
+    setDescricao("");
+    setValor("");
+    setTipo("despesa");
+    setTipoGasto("variavel");
+    setMetodoPagamento("pix");
+    setCartaoId("");
+    setTotalParcelas(1);
+    setCategoria("Moradia");
+    setBanco("Nubank");
+    setBancoDestino("Banco do Brasil");
+    setPago(true);
+    setData(new Date().toISOString().split("T")[0]);
+  };
+
   useEffect(() => {
     if (transacaoEmEdicao) {
       setDescricao(transacaoEmEdicao.descricao || "");
@@ -92,21 +107,6 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
       resetForm();
     }
   }, [transacaoEmEdicao]);
-
-  const resetForm = () => {
-    setDescricao("");
-    setValor("");
-    setTipo("despesa");
-    setTipoGasto("variavel");
-    setMetodoPagamento("pix");
-    setCartaoId("");
-    setTotalParcelas(1);
-    setCategoria("Moradia");
-    setBanco("Nubank");
-    setBancoDestino("Banco do Brasil");
-    setPago(true);
-    setData(new Date().toISOString().split("T")[0]);
-  };
 
   const handleValorChange = (value: string) => {
     const digits = value.replace(/\D/g, "");
