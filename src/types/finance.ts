@@ -54,7 +54,7 @@ export const opcoesCategoriaReceita = [
   'Rendimentos',
   'Vendas',
   'Saldo Inicial',
-  'Outros',
+  'Extra',
 ] as const;
 
 export type TipoTransacao =
