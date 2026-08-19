@@ -53,7 +53,7 @@ export function useTransacoes(
         }
       })
       .catch((err) => console.error("Erro ao carregar transações:", err));
-  }, [token, fetchAutenticado]);
+  }, [token]); // <-- Mantém apenas o token para evitar loop infinito
 
   const bancosUnicos = useMemo(() => {
     if (!Array.isArray(transacoes)) return [];
