@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 const rawUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const API_URL = (
@@ -33,29 +33,29 @@ export function useAuth() {
     setUsuario(u);
   };
 
-  const fetchAutenticado = async (
-    endpoint: string,
-    options: RequestInit = {}
-  ) => {
-    const headers = {
-      "Content-Type": "application/json",
-      "ngrok-skip-browser-warning": "true",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    };
+  const fetchAutenticado = useCallback(
+    async (endpoint: string, options: RequestInit = {}) => {
+      const headers = {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers,
+      };
 
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      ...options,
-      headers,
-    });
+      const response = await fetch(`${API_URL}${endpoint}`, {
+        ...options,
+        headers,
+      });
 
-    if (response.status === 401 || response.status === 403) {
-      handleLogout();
-      throw new Error("Sessão expirada. Faça login novamente.");
-    }
+      if (response.status === 401 || response.status === 403) {
+        handleLogout();
+        throw new Error("Sessão expirada. Faça login novamente.");
+      }
 
-    return response;
-  };
+      return response;
+    },
+    [token]
+  );
 
   return {
     token,

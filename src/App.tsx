@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import { Header } from "./components/Header";
 import { DashboardResumo } from "./components/DashboardResumo";
 import { FormularioTransacao } from "./components/FormularioTransacao";
@@ -18,22 +17,9 @@ import { useCartoes } from "./hooks/useCartoes";
 import { useMetas } from "./hooks/useMetas";
 
 export default function App() {
-  const { token, usuario, handleLogout, handleLoginSucesso, fetchAutenticado: fetchAuthBase } =
+  // A função fetchAutenticado já está protegida por useCallback dentro do hook useAuth
+  const { token, usuario, handleLogout, handleLoginSucesso, fetchAutenticado } =
     useAuth();
-
-  // Garante que a referência de fetchAutenticado seja estável para evitar loops nos useEffects dos hooks
-  const fetchAutenticado = useCallback(
-    async (endpoint: string, options: RequestInit = {}) => {
-      return fetchAuthBase(endpoint, {
-        ...options,
-        headers: {
-          'ngrok-skip-browser-warning': 'true',
-          ...(options.headers || {}),
-        },
-      });
-    },
-    [fetchAuthBase]
-  );
 
   const {
     transacoes,
