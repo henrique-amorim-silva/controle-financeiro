@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { opcoesMetodoPagamento } from "../types/finance"; // Importando as opções de pagamento
 
 export interface FiltrosState {
-  tipo: "todos" | "despesa" | "receita" | "transferencia"; // ADICIONADO 'transferencia'
+  tipo: "todos" | "despesa" | "receita" | "transferencia";
   tipoGasto: "todos" | "fixo" | "variavel";
   status: "todos" | "pago" | "pendente";
+  metodoPagamento: string; // ADICIONADO: Estado para o filtro de forma de pagamento
   descricao: string;
   banco: string;
   categoria: string;
@@ -32,6 +34,7 @@ export const FiltrosTransacao: React.FC<FiltrosProps> = ({
     filtros.tipo !== "todos" ||
     filtros.tipoGasto !== "todos" ||
     filtros.status !== "todos" ||
+    filtros.metodoPagamento !== "todos" || // ADICIONADO: Validação para verificar se o filtro está ativo
     filtros.descricao !== "" ||
     filtros.banco !== "todos" ||
     filtros.categoria !== "todas" ||
@@ -120,7 +123,11 @@ export const FiltrosTransacao: React.FC<FiltrosProps> = ({
                 onChange={(e) =>
                   setFiltros((prev) => ({
                     ...prev,
-                    tipo: e.target.value as "todos" | "despesa" | "receita" | "transferencia",
+                    tipo: e.target.value as
+                      | "todos"
+                      | "despesa"
+                      | "receita"
+                      | "transferencia",
                   }))
                 }
                 className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-emerald-500 outline-none cursor-pointer"
@@ -171,6 +178,30 @@ export const FiltrosTransacao: React.FC<FiltrosProps> = ({
                 <option value="todos">Todos os Status</option>
                 <option value="pago">Pago / Recebido</option>
                 <option value="pendente">Pendente</option>
+              </select>
+            </div>
+
+            {/* ADICIONADO: Forma de Pagamento */}
+            <div>
+              <label className="block text-slate-400 mb-1 font-medium">
+                Forma de Pagamento
+              </label>
+              <select
+                value={filtros.metodoPagamento}
+                onChange={(e) =>
+                  setFiltros((prev) => ({
+                    ...prev,
+                    metodoPagamento: e.target.value,
+                  }))
+                }
+                className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-emerald-500 outline-none cursor-pointer"
+              >
+                <option value="todos">Todas as Formas</option>
+                {opcoesMetodoPagamento.map((opcao) => (
+                  <option key={opcao.value} value={opcao.value}>
+                    {opcao.label}
+                  </option>
+                ))}
               </select>
             </div>
 

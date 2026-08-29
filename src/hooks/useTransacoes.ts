@@ -19,6 +19,7 @@ export function useTransacoes(
     tipo: "todos",
     tipoGasto: "todos",
     status: "todos",
+    metodoPagamento: "todos", // ADICIONADO: Estado inicial do filtro de forma de pagamento
     descricao: "",
     banco: "todos",
     categoria: "todas",
@@ -53,7 +54,7 @@ export function useTransacoes(
         }
       })
       .catch((err) => console.error("Erro ao carregar transações:", err));
-  }, [token]); // <-- Mantém apenas o token para evitar loop infinito
+  }, [token]);
 
   const bancosUnicos = useMemo(() => {
     if (!Array.isArray(transacoes)) return [];
@@ -107,6 +108,14 @@ export function useTransacoes(
       if (filtros.status === "pago" && !t.pago) return false;
       if (filtros.status === "pendente" && t.pago) return false;
 
+      // ADICIONADO: Validação do filtro de forma de pagamento
+      if (filtros.metodoPagamento !== "todos") {
+        const metodoItem = (t.metodoPagamento || (t as unknown as Record<string, unknown>).metodo_pagamento || "").toString().toLowerCase();
+        if (!metodoItem.includes(filtros.metodoPagamento.toLowerCase())) {
+          return false;
+        }
+      }
+
       if (
         filtros.descricao.trim() !== "" &&
         !normalizarTexto(t.descricao).includes(
@@ -130,6 +139,7 @@ export function useTransacoes(
       tipo: "todos",
       tipoGasto: "todos",
       status: "todos",
+      metodoPagamento: "todos", // ADICIONADO: Resetando o filtro de forma de pagamento
       descricao: "",
       banco: "todos",
       categoria: "todas",
