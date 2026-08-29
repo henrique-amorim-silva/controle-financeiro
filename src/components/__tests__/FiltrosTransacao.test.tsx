@@ -8,6 +8,7 @@ describe('FiltrosTransacao Component', () => {
     tipo: 'todos',
     tipoGasto: 'todos',
     status: 'todos',
+    metodoPagamento: "todos",
     descricao: '',
     banco: 'todos',
     categoria: 'todas',
