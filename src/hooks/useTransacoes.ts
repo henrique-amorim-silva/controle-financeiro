@@ -11,7 +11,12 @@ export function useTransacoes(
 ) {
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
   const [transacaoEmEdicao, setTransacaoEmEdicao] = useState<Transacao | null>(null);
-  const [mesFiltro, setMesFiltro] = useState<string>("2026-08");
+  const [mesFiltro, setMesFiltro] = useState<string>(() => {
+  const agora = new Date();
+  const ano = agora.getFullYear();
+  const mes = String(agora.getMonth() + 1).padStart(2, '0');
+  return `${ano}-${mes}`;
+});
 
   const formularioRef = useRef<HTMLDivElement>(null);
 
@@ -250,8 +255,30 @@ export function useTransacoes(
     }
   };
 
-  const handlePagarFaturaLote = async (ids: string[]) => {
+  const handlePagarFaturaLote = async (cartaoIdSelecionado: string) => {
     try {
+      // Filtra transações baseando-se estritamente no ID do cartão
+      const transacoesParaPagar = transacoes.filter((t) => {
+        const transacaoCartaoId = (t.cartaoId || (t as unknown as Record<string, unknown>).cartao_id || "").toString();
+        const matchCartaoId = transacaoCartaoId === cartaoIdSelecionado;
+        
+        const matchMes = mesFiltro ? t.data?.startsWith(mesFiltro) : true;
+        const ePendente = !t.pago;
+
+        // Verifica se a forma de pagamento é cartão de crédito
+        const metodo = (t.metodoPagamento || (t as unknown as Record<string, unknown>).metodo_pagamento || "").toString().toLowerCase();
+        const ehCartaoCredito = metodo.includes("cartao_credito") || metodo.includes("crédito");
+
+        return matchCartaoId && matchMes && ePendente && ehCartaoCredito;
+      });
+
+      if (transacoesParaPagar.length === 0) {
+        alert(`Não há faturas de cartão de crédito pendentes para este cartão no mês ${mesFiltro || 'selecionado'}.`);
+        return;
+      }
+
+      const ids = transacoesParaPagar.map((t) => t.id);
+
       for (const id of ids) {
         await fetchAutenticado(`/transacoes/${id}/pago`, {
           method: "PATCH",
@@ -263,7 +290,7 @@ export function useTransacoes(
         prev.map((t) => (ids.includes(t.id) ? { ...t, pago: true } : t))
       );
 
-      alert("Fatura quitada com sucesso!");
+      alert(`Fatura de cartão de crédito quitada com sucesso!`);
     } catch (err) {
       console.error("Erro ao quitar fatura:", err);
       alert("Erro ao tentar quitar a fatura.");

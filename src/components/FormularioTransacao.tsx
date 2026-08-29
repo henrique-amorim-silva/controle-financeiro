@@ -17,11 +17,11 @@ import { calcularVencimentoFatura } from "../utils/cartaoUtils";
 
 interface FormularioTransacaoProps {
   onAdicionarTransacao: (
-    transacao: Omit<Transacao, "id">
+    transacao: Omit<Transacao, "id">,
   ) => Promise<void> | void;
   onEditarTransacao?: (
     id: string,
-    transacao: Omit<Transacao, "id">
+    transacao: Omit<Transacao, "id">,
   ) => Promise<void> | void;
   transacaoEmEdicao?: Transacao | null;
   onCancelarEdicao?: () => void;
@@ -39,7 +39,8 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
   const [valor, setValor] = useState("");
   const [tipo, setTipo] = useState<TipoTransacao>("despesa");
   const [tipoGasto, setTipoGasto] = useState<TipoGasto>("variavel");
-  const [metodoPagamento, setMetodoPagamento] = useState<MetodoPagamento>("pix");
+  const [metodoPagamento, setMetodoPagamento] =
+    useState<MetodoPagamento>("pix");
   const [cartaoId, setCartaoId] = useState<string>("");
   const [totalParcelas, setTotalParcelas] = useState<number>(1);
   const [categoria, setCategoria] = useState<string>("Moradia");
@@ -66,7 +67,7 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
   useEffect(() => {
     if (transacaoEmEdicao) {
       setDescricao(transacaoEmEdicao.descricao || "");
-      
+
       const valorNum = Number(transacaoEmEdicao.valor || 0);
       setValor(
         new Intl.NumberFormat("pt-BR", {
@@ -74,35 +75,40 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
           currency: "BRL",
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
-        }).format(valorNum)
+        }).format(valorNum),
       );
 
       setTipo(transacaoEmEdicao.tipo || "despesa");
-      
-      const tipoGastoBruto = (
-        transacaoEmEdicao.tipoGasto ?? 
-        transacaoEmEdicao.tipogasto ?? 
-        transacaoEmEdicao.tipo_gasto ?? 
-        "variavel"
-      ) as TipoGasto;
+
+      const tipoGastoBruto = (transacaoEmEdicao.tipoGasto ??
+        transacaoEmEdicao.tipogasto ??
+        transacaoEmEdicao.tipo_gasto ??
+        "variavel") as TipoGasto;
       setTipoGasto(tipoGastoBruto.includes("fixo") ? "fixo" : "variavel");
 
       setCategoria(transacaoEmEdicao.categoria || "Geral");
       setBanco(transacaoEmEdicao.banco || "Geral");
-      setBancoDestino(transacaoEmEdicao.bancoDestino || transacaoEmEdicao.banco_destino || "Banco do Brasil");
+      setBancoDestino(
+        transacaoEmEdicao.bancoDestino ||
+          transacaoEmEdicao.banco_destino ||
+          "Banco do Brasil",
+      );
       setPago(transacaoEmEdicao.pago ?? true);
-      
+
       if (transacaoEmEdicao.data) {
         const dataFormatada = transacaoEmEdicao.data.split("T")[0];
         setData(dataFormatada);
       }
 
-      const metodoBruto = (
-        transacaoEmEdicao.metodoPagamento ?? 
-        transacaoEmEdicao.metodo_pagamento ?? 
-        "pix"
-      ) as MetodoPagamento;
+      const metodoBruto = (transacaoEmEdicao.metodoPagamento ??
+        transacaoEmEdicao.metodo_pagamento ??
+        "pix") as MetodoPagamento;
       setMetodoPagamento(metodoBruto);
+
+      // Carrega o ID do cartão vinculado se houver
+      const idCartaoVinculado =
+        transacaoEmEdicao.cartaoId || (transacaoEmEdicao as any).cartao_id;
+      setCartaoId(idCartaoVinculado ? String(idCartaoVinculado) : "");
     } else {
       resetForm();
     }
@@ -122,7 +128,7 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
         currency: "BRL",
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
-      }).format(numericValue)
+      }).format(numericValue),
     );
   };
 
@@ -145,24 +151,39 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
             valor
               .replace(/[^\d,.-]/g, "")
               .replace(".", "")
-              .replace(",", ".")
+              .replace(",", "."),
           )
         : Number(valor);
 
     if (transacaoEmEdicao) {
+      let bancoFinal = banco || "Geral";
+      let idCartaoFinal: string | undefined = undefined; // Corrigido para aceitar string ou undefined
+
+      if (tipo === "despesa" && metodoPagamento === "cartao_credito") {
+        const cartaoSelecionado = cartoes.find(
+          (c) => String(c.id) === String(cartaoId),
+        );
+        if (cartaoSelecionado) {
+          bancoFinal = cartaoSelecionado.banco;
+          idCartaoFinal = String(cartaoSelecionado.id);
+        }
+      }
+
       const transacaoAtualizada: Omit<Transacao, "id"> = {
         descricao,
         valor: valorNumerico,
         tipo,
         tipoGasto: tipo === "despesa" ? tipoGasto : undefined,
         tipogasto: tipo === "despesa" ? tipoGasto : undefined,
-        categoria: tipo === "transferencia" ? "Transferência" : categoria || "Geral",
-        banco: banco || "Geral",
+        categoria:
+          tipo === "transferencia" ? "Transferência" : categoria || "Geral",
+        banco: bancoFinal,
         bancoDestino: tipo === "transferencia" ? bancoDestino : undefined,
         banco_destino: tipo === "transferencia" ? bancoDestino : undefined,
         pago,
         data,
         metodoPagamento,
+        cartaoId: idCartaoFinal,
       };
 
       if (onEditarTransacao) {
@@ -171,7 +192,7 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
     } else {
       if (tipo === "despesa" && metodoPagamento === "cartao_credito") {
         const cartaoSelecionado = cartoes.find(
-          (c) => String(c.id) === String(cartaoId)
+          (c) => String(c.id) === String(cartaoId),
         );
 
         if (!cartaoSelecionado) {
@@ -185,7 +206,7 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
           const dataVencimentoFatura = calcularVencimentoFatura(
             data,
             cartaoSelecionado,
-            i
+            i,
           );
 
           const novaTransacao: Omit<Transacao, "id"> = {
@@ -316,9 +337,7 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
               </label>
               <select
                 value={tipoGasto}
-                onChange={(e) =>
-                  setTipoGasto(e.target.value as TipoGasto)
-                }
+                onChange={(e) => setTipoGasto(e.target.value as TipoGasto)}
                 className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
               >
                 {opcoesTipoGasto.map((opcao) => (
@@ -354,7 +373,8 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
           </select>
         </div>
 
-        {!transacaoEmEdicao && tipo === "despesa" && metodoPagamento === "cartao_credito" && (
+        {/* Exibição dos campos de cartão habilitada tanto para cadastro quanto para edição */}
+        {tipo === "despesa" && metodoPagamento === "cartao_credito" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="block text-xs font-medium text-slate-300">
@@ -375,22 +395,24 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
               </select>
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-xs font-medium text-slate-300">
-                Número de Parcelas
-              </label>
-              <select
-                value={totalParcelas}
-                onChange={(e) => setTotalParcelas(Number(e.target.value))}
-                className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-              >
-                {Array.from({ length: 24 }, (_, i) => i + 1).map((n) => (
-                  <option key={n} value={n}>
-                    {n}x {n === 1 ? "(À vista)" : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {!transacaoEmEdicao && (
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-slate-300">
+                  Número de Parcelas
+                </label>
+                <select
+                  value={totalParcelas}
+                  onChange={(e) => setTotalParcelas(Number(e.target.value))}
+                  className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                >
+                  {Array.from({ length: 24 }, (_, i) => i + 1).map((n) => (
+                    <option key={n} value={n}>
+                      {n}x {n === 1 ? "(À vista)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         )}
 

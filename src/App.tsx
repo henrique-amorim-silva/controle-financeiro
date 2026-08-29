@@ -46,12 +46,12 @@ export default function App() {
 
   const { cartoes, handleAdicionarCartao, handleDeletarCartao } = useCartoes(
     token,
-    fetchAutenticado
+    fetchAutenticado,
   );
 
   const { metas, handleAdicionarMeta, handleDeletarMeta } = useMetas(
     token,
-    fetchAutenticado
+    fetchAutenticado,
   );
 
   if (!token) {
@@ -120,8 +120,6 @@ export default function App() {
 
         <SecaoGraficos transacoes={transacoesMetricasGerais} />
 
-        <AcoesRapidas onDuplicarGastosFixos={handleDuplicarGastosFixos} />
-
         <FormularioCartao
           onAdicionarCartao={handleAdicionarCartao}
           cartoes={cartoes}
@@ -138,6 +136,12 @@ export default function App() {
           />
         </div>
 
+        <AcoesRapidas
+          onDuplicarGastosFixos={handleDuplicarGastosFixos}
+          onPagarFaturaLote={handlePagarFaturaLote}
+          cartoes={cartoes}
+        />
+
         <div className="mt-8">
           <FiltrosTransacao
             filtros={filtros}
@@ -152,7 +156,7 @@ export default function App() {
             onDeletarTransacao={handleDeletarTransacao}
             onAlternarPago={handleAlternarPago}
             onIniciarEdicao={handleIniciarEdicao}
-            onPagarFaturaLote={handlePagarFaturaLote}
+            cartoes={cartoes} // <-- Passe os cartões aqui
           />
         </div>
 

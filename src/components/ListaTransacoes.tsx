@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import type { Transacao } from "../types/finance";
+import type { CartaoCredito } from "../types/cartao"; // <-- 1. Importe o tipo do cartão
 import { formatarData } from "../utils/formatters";
 
 interface ListaTransacoesProps {
@@ -8,6 +9,7 @@ interface ListaTransacoesProps {
   onAlternarPago: (transacao: Transacao) => void;
   onIniciarEdicao?: (transacao: Transacao) => void;
   onPagarFaturaLote?: (ids: string[]) => Promise<void> | void;
+  cartoes?: CartaoCredito[]; // <-- 2. Adicione os cartões nas props
 }
 
 const formatarFormaPagamento = (metodo?: string) => {
@@ -26,6 +28,7 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
   onAlternarPago,
   onIniciarEdicao,
   onPagarFaturaLote: _onPagarFaturaLote,
+  cartoes = [], // <-- 3. Receba os cartões destruturados aqui
 }) => {
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [itensPorPagina, setItensPorPagina] = useState(10);
@@ -81,6 +84,12 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
               const estaPago = Boolean(t.pago);
               const valorNumerico = Number(t.valor || 0);
               const metodoPagamento = t.metodoPagamento || t.metodo_pagamento;
+
+              // <-- 4. Localiza o cartão específico pelo ID salvo na transação (ou mapeia propriedade alternativa)
+              const cartaoIdTransacao = t.cartaoId || (t as unknown as Record<string, unknown>).cartao_id;
+              const cartaoUtilizado = cartoes.find(
+                (c) => String(c.id) === String(cartaoIdTransacao)
+              );
 
               return (
                 <tr
@@ -141,6 +150,7 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
                     </span>
                   </td>
 
+                  {/* <-- 5. Coluna Banco / Conta atualizada para exibir o nome do cartão específico se houver */}
                   <td className="p-3 text-slate-300">
                     {isTransferencia && bancoDestinoFinal ? (
                       <div className="flex items-center gap-1.5 font-medium">
@@ -148,6 +158,11 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
                         <span className="text-cyan-400 font-bold">➔</span>
                         <span className="text-slate-200">{bancoDestinoFinal}</span>
                       </div>
+                    ) : cartaoUtilizado ? (
+                      <span className="text-indigo-400 font-medium">
+                        {cartaoUtilizado.nome}{" "}
+                        <span className="text-xs text-slate-500">({t.banco})</span>
+                      </span>
                     ) : (
                       <span className="text-slate-400">{t.banco || "Geral"}</span>
                     )}
