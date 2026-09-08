@@ -60,7 +60,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased">
-      <Header />
+      <Header mesFiltro={mesFiltro} />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="bg-slate-900/70 border border-slate-800 p-4 rounded-2xl mb-6 flex items-center justify-between shadow-sm shadow-slate-950/20">
