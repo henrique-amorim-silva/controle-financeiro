@@ -43,6 +43,7 @@ export const opcoesCategoriaDespesa = [
   "Lazer",
   "Moradia",
   "PET",
+  "Reserva de Energência",
   "Saúde",
   "Transporte",
   "Vestimenta",
