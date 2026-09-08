@@ -5,7 +5,6 @@ import {
   Cell,
   ResponsiveContainer,
   Tooltip,
-  Legend,
 } from "recharts";
 import type { Transacao } from "../types/finance";
 
@@ -332,58 +331,82 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
               Nenhum dado disponível para o gráfico selecionado neste período.
             </div>
           ) : (
-            <div className="h-80 w-full relative">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={dadosAtuais}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={4}
-                    dataKey="value"
-                    label={({ percent }: { percent?: number }) =>
-                      `${((percent ?? 0) * 100).toFixed(1)}%`
-                    }
+            <div className="w-full flex flex-col items-center pb-2">
+              {/* Container do Gráfico */}
+              <div className="h-64 sm:h-72 w-full relative">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={dadosAtuais}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={90}
+                      paddingAngle={3}
+                      dataKey="value"
+                      label={({ percent }: { percent?: number }) =>
+                        `${((percent ?? 0) * 100).toFixed(1)}%`
+                      }
+                    >
+                      {dadosAtuais.map((_, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={CORES[index % CORES.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: unknown) => {
+                        const valNum = Number(value ?? 0);
+                        return [
+                          `R$ ${valNum.toLocaleString("pt-BR", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })} (${((valNum / (totalValor || 1)) * 100).toFixed(1)}%)`,
+                          "Valor",
+                        ];
+                      }}
+                      contentStyle={{
+                        backgroundColor: "#020617",
+                        borderColor: "#334155",
+                        borderRadius: "0.75rem",
+                        color: "#f8fafc",
+                        fontSize: "12px",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Legenda compacta com nome e valor na mesma linha */}
+              <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-2 px-1 mt-4 border-t border-slate-800/60 pt-3">
+                {dadosAtuais.map((item, index) => (
+                  <div
+                    key={`legend-${index}`}
+                    className="flex items-center justify-between bg-slate-900/60 border border-slate-800/80 rounded-xl px-3 py-2"
                   >
-                    {dadosAtuais.map((_, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={CORES[index % CORES.length]}
+                    <div className="flex items-center gap-2 overflow-hidden mr-2">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{ backgroundColor: CORES[index % CORES.length] }}
                       />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value: unknown) => {
-                      const valNum = Number(value ?? 0);
-                      return [
-                        `R$ ${valNum.toLocaleString("pt-BR", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })} (${((valNum / (totalValor || 1)) * 100).toFixed(1)}%)`,
-                        "Valor",
-                      ];
-                    }}
-                    contentStyle={{
-                      backgroundColor: "#020617",
-                      borderColor: "#334155",
-                      borderRadius: "0.75rem",
-                      color: "#f8fafc",
-                      fontSize: "12px",
-                    }}
-                  />
-                  <Legend
-                    verticalAlign="bottom"
-                    height={36}
-                    formatter={(value) => (
-                      <span className="text-slate-300 text-xs font-medium ml-1">
-                        {value}
+                      <span
+                        className="text-slate-300 text-xs font-medium truncate"
+                        title={item.name}
+                      >
+                        {item.name}
                       </span>
-                    )}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+                    </div>
+                    <span className="text-emerald-400 text-xs font-bold shrink-0">
+                      R${" "}
+                      {item.value.toLocaleString("pt-BR", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
