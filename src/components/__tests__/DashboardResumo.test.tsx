@@ -12,7 +12,7 @@ describe('DashboardResumo Component', () => {
   ];
 
   it('deve calcular corretamente os totais de transações liquidadas', () => {
-    render(<DashboardResumo transacoes={transacoesMock} />);
+    render(<DashboardResumo transacoes={transacoesMock} isBalancoGeral={false} />);
 
     // Encontra o container principal do card subindo até o bloco pai correto
     const cardReceitas = screen.getByText('Entradas Realizadas').closest('div')?.parentElement;
@@ -29,7 +29,7 @@ describe('DashboardResumo Component', () => {
   });
 
   it('deve exibir avisos de pendências quando houver transações não pagas', () => {
-    render(<DashboardResumo transacoes={transacoesMock} />);
+    render(<DashboardResumo transacoes={transacoesMock} isBalancoGeral={false} />);
 
     expect(screen.getByText(/receitas a receber pendentes/i)).toBeInTheDocument();
   });
