@@ -105,7 +105,12 @@ export default function App() {
           </div>
         </div>
 
-        <DashboardResumo transacoes={transacoesMetricasGerais} />
+        <DashboardResumo
+          transacoes={transacoesMetricasGerais}
+          todasTransacoesSistema={transacoes}
+          isBalancoGeral={!mesFiltro}
+          mesFiltroSelecionado={mesFiltro}
+        />
 
         <SecaoMetasLimites
           transacoes={transacoesMetricasGerais}
