@@ -7,11 +7,18 @@ describe("AcoesRapidas Component", () => {
   it("deve renderizar o título e chamar a função ao clicar no botão de duplicar gastos fixos", async () => {
     const user = userEvent.setup();
     const handleDuplicarGastosFixosMock = vi.fn();
-    
+
     // Declaração dos mocks exigidos pelas novas props
     const handlePagarFaturaLoteMock = vi.fn();
     const cartoesMock = [
-      { id: "1", nome: "Nubank", banco: "Nubank", limite: 1000, diaFechamento: 10, diaVencimento: 17 }
+      {
+        id: "uuid-123-abc",
+        nome: "Nubank",
+        banco: "Nubank",
+        limite: 1000,
+        diaFechamento: 10,
+        diaVencimento: 17,
+      },
     ];
 
     // Renderiza o componente passando todas as props obrigatórias

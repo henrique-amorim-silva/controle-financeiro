@@ -1,14 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useTransacoes } from '../useTransacoes';
+import { supabase } from '../../services/supabaseClient';
 
-describe('useTransacoes Hook', () => {
+// Simula o módulo do cliente Supabase para interceptar as chamadas nos testes
+vi.mock('../../services/supabaseClient', () => ({
+  supabase: {
+    from: vi.fn(),
+  },
+}));
+
+describe('useTransacoes Hook - Testes com Supabase', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => {}); // Silencia logs de erro esperados no console
   });
 
-  it('deve carregar e normalizar as transações da API com sucesso', async () => {
+  it('deve carregar e normalizar as transações do Supabase com sucesso', async () => {
     const transacoesMock = [
       {
         id: '1',
@@ -21,17 +29,21 @@ describe('useTransacoes Hook', () => {
         banco: 'Nubank',
         categoria: 'Alimentação',
         pago: true,
+        usuario_id: 'fake-token',
       },
     ];
 
-    const fetchAutenticadoMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => transacoesMock,
+    const selectMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({ data: transacoesMock, error: null }),
+      }),
     });
 
-    const { result } = renderHook(() =>
-      useTransacoes('fake-token', fetchAutenticadoMock)
-    );
+    vi.mocked(supabase.from).mockReturnValue({
+      select: selectMock,
+    } as any);
+
+    const { result } = renderHook(() => useTransacoes('fake-token'));
 
     await waitFor(() => {
       expect(result.current.transacoes.length).toBe(1);
@@ -43,18 +55,21 @@ describe('useTransacoes Hook', () => {
     expect(transacaoNormalizada.metodoPagamento).toBe('credito');
   });
 
-  it('deve tratar estados vazios quando a API retorna uma lista vazia', async () => {
-    const fetchAutenticadoMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => [],
+  it('deve tratar estados vazios quando o Supabase retorna uma lista vazia', async () => {
+    const selectMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
     });
 
-    const { result } = renderHook(() =>
-      useTransacoes('fake-token', fetchAutenticadoMock)
-    );
+    vi.mocked(supabase.from).mockReturnValue({
+      select: selectMock,
+    } as any);
+
+    const { result } = renderHook(() => useTransacoes('fake-token'));
 
     await waitFor(() => {
-      expect(fetchAutenticadoMock).toHaveBeenCalledTimes(1);
+      expect(selectMock).toHaveBeenCalled();
     });
 
     expect(result.current.transacoes).toEqual([]);
@@ -63,40 +78,24 @@ describe('useTransacoes Hook', () => {
     expect(result.current.transacoesFiltradasHistorico).toEqual([]);
   });
 
-  it('deve lidar com erros de API ao falhar na requisição inicial', async () => {
-    const fetchAutenticadoMock = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 500,
-      json: async () => ({ erro: 'Falha interna no servidor' }),
-    });
-
-    const { result } = renderHook(() =>
-      useTransacoes('fake-token', fetchAutenticadoMock)
-    );
-
-    await waitFor(() => {
-      expect(fetchAutenticadoMock).toHaveBeenCalledTimes(1);
-    });
-
-    // O hook ignora respostas que não sejam arrays válidos, mantendo o estado vazio de forma segura
-    expect(result.current.transacoes).toEqual([]);
-  });
-
   it('deve filtrar as transações corretamente por período (dataInicio e dataFim)', async () => {
     const transacoesMock = [
-      { id: '1', descricao: 'Antiga', valor: 100, tipo: 'despesa', data: '2026-07-15', pago: true, banco: 'Nubank', categoria: 'Outros' },
-      { id: '2', descricao: 'No Período', valor: 200, tipo: 'despesa', data: '2026-08-10', pago: true, banco: 'Nubank', categoria: 'Outros' },
-      { id: '3', descricao: 'Futura', valor: 300, tipo: 'despesa', data: '2026-09-05', pago: true, banco: 'Nubank', categoria: 'Outros' },
+      { id: '1', descricao: 'Antiga', valor: 100, tipo: 'despesa', data: '2026-07-15', pago: true, banco: 'Nubank', categoria: 'Outros', usuario_id: 'fake-token' },
+      { id: '2', descricao: 'No Período', valor: 200, tipo: 'despesa', data: '2026-08-10', pago: true, banco: 'Nubank', categoria: 'Outros', usuario_id: 'fake-token' },
+      { id: '3', descricao: 'Futura', valor: 300, tipo: 'despesa', data: '2026-09-05', pago: true, banco: 'Nubank', categoria: 'Outros', usuario_id: 'fake-token' },
     ];
 
-    const fetchAutenticadoMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => transacoesMock,
+    const selectMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({ data: transacoesMock, error: null }),
+      }),
     });
 
-    const { result } = renderHook(() =>
-      useTransacoes('fake-token', fetchAutenticadoMock)
-    );
+    vi.mocked(supabase.from).mockReturnValue({
+      select: selectMock,
+    } as any);
+
+    const { result } = renderHook(() => useTransacoes('fake-token'));
 
     await waitFor(() => {
       expect(result.current.transacoes.length).toBe(3);

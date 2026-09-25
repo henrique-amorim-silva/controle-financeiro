@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Header } from "./components/Header";
 import { DashboardResumo } from "./components/DashboardResumo";
 import { FormularioTransacao } from "./components/FormularioTransacao";
@@ -10,6 +11,7 @@ import { SecaoGraficos } from "./components/SecaoGraficos";
 import { AcoesRapidas } from "./components/AcoesRapidas";
 import { FiltrosTransacao } from "./components/FiltrosTransacao";
 import { SecaoMetasLimites } from "./components/SecaoMetasLimites";
+import AlterarSenha from "./components/AlterarSenha";
 
 import { useAuth } from "./hooks/useAuth";
 import { useTransacoes } from "./hooks/useTransacoes";
@@ -17,9 +19,8 @@ import { useCartoes } from "./hooks/useCartoes";
 import { useMetas } from "./hooks/useMetas";
 
 export default function App() {
-  // A função fetchAutenticado já está protegida por useCallback dentro do hook useAuth
-  const { token, usuario, handleLogout, handleLoginSucesso, fetchAutenticado } =
-    useAuth();
+  const { token, usuario, handleLogout, handleLoginSucesso } = useAuth();
+  const [mostrarAlterarSenha, setMostrarAlterarSenha] = useState(false);
 
   const {
     transacoes,
@@ -42,17 +43,11 @@ export default function App() {
     handleAlternarPago,
     handlePagarFaturaLote,
     handleDuplicarGastosFixos,
-  } = useTransacoes(token, fetchAutenticado);
+  } = useTransacoes(token);
 
-  const { cartoes, handleAdicionarCartao, handleDeletarCartao } = useCartoes(
-    token,
-    fetchAutenticado,
-  );
+  const { cartoes, handleAdicionarCartao, handleDeletarCartao } = useCartoes(token);
 
-  const { metas, handleAdicionarMeta, handleDeletarMeta } = useMetas(
-    token,
-    fetchAutenticado,
-  );
+  const { metas, handleAdicionarMeta, handleDeletarMeta } = useMetas(token);
 
   if (!token) {
     return <Login onLoginSucesso={handleLoginSucesso} />;
@@ -63,20 +58,34 @@ export default function App() {
       <Header mesFiltro={mesFiltro} />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-slate-900/70 border border-slate-800 p-4 rounded-2xl mb-6 flex items-center justify-between shadow-sm shadow-slate-950/20">
+        <div className="bg-slate-900/70 border border-slate-800 p-4 rounded-2xl mb-6 shadow-sm shadow-slate-950/20 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
             <p className="text-xs text-slate-400">Usuário Autenticado</p>
             <h3 className="text-sm font-semibold text-emerald-400">
               {usuario?.nome}
             </h3>
           </div>
-          <button
-            onClick={handleLogout}
-            className="text-xs bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 px-3 py-1.5 rounded-xl transition-all cursor-pointer font-medium"
-          >
-            Sair da Conta
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setMostrarAlterarSenha(!mostrarAlterarSenha)}
+              className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-xl transition-all cursor-pointer font-medium"
+            >
+              {mostrarAlterarSenha ? "Fechar Alterar Senha" : "Alterar Senha"}
+            </button>
+            <button
+              onClick={handleLogout}
+              className="text-xs bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 px-3 py-1.5 rounded-xl transition-all cursor-pointer font-medium"
+            >
+              Sair da Conta
+            </button>
+          </div>
         </div>
+
+        {mostrarAlterarSenha && (
+          <div className="mb-6">
+            <AlterarSenha token={token} />
+          </div>
+        )}
 
         <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md shadow-slate-950/20">
           <div>
@@ -161,7 +170,7 @@ export default function App() {
             onDeletarTransacao={handleDeletarTransacao}
             onAlternarPago={handleAlternarPago}
             onIniciarEdicao={handleIniciarEdicao}
-            cartoes={cartoes} // <-- Passe os cartões aqui
+            cartoes={cartoes}
           />
         </div>
 

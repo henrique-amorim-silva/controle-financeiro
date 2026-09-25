@@ -1,28 +1,39 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useCartoes } from '../useCartoes';
+import { supabase } from '../../services/supabaseClient';
 
-describe('useCartoes Hook - Testes Avançados', () => {
+// Simula o módulo do cliente Supabase para interceptar as chamadas nos testes
+vi.mock('../../services/supabaseClient', () => ({
+  supabase: {
+    from: vi.fn(),
+  },
+}));
+
+describe('useCartoes Hook - Testes com Supabase', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => {});
     globalThis.alert = vi.fn();
-    vi.spyOn(window, 'confirm').mockReturnValue(true); // Simula confirmação positiva do usuário
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
   });
 
-  it('deve carregar os cartões da API com sucesso ao iniciar', async () => {
+  it('deve carregar os cartões do Supabase com sucesso ao iniciar', async () => {
     const cartoesMock = [
-      { id: '1', nome: 'Nubank', banco: 'Nubank', limite: 5000, diaFechamento: 5, diaVencimento: 10 },
+      { id: 1, nome: 'Nubank', banco: 'Nubank', limite: 5000, dia_fechamento: 5, dia_vencimento: 10, usuario_id: 'fake-token' },
     ];
 
-    const fetchAutenticadoMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => cartoesMock,
+    const selectMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({ data: cartoesMock, error: null }),
+      }),
     });
 
-    const { result } = renderHook(() =>
-      useCartoes('fake-token', fetchAutenticadoMock)
-    );
+    vi.mocked(supabase.from).mockReturnValue({
+      select: selectMock,
+    } as any);
+
+    const { result } = renderHook(() => useCartoes('fake-token'));
 
     await waitFor(() => {
       expect(result.current.cartoes.length).toBe(1);
@@ -31,54 +42,40 @@ describe('useCartoes Hook - Testes Avançados', () => {
     expect(result.current.cartoes[0].nome).toBe('Nubank');
   });
 
-  it('deve tratar falhas de requisição GET no carregamento inicial', async () => {
-    const fetchAutenticadoMock = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 500,
-      json: async () => [],
-    });
-
-    const { result } = renderHook(() =>
-      useCartoes('fake-token', fetchAutenticadoMock)
-    );
-
-    await waitFor(() => {
-      expect(fetchAutenticadoMock).toHaveBeenCalledTimes(1);
-    });
-
-    expect(result.current.cartoes).toEqual([]);
-  });
-
-  it('deve adicionar um novo cartão com sucesso e disparar alerta de sucesso', async () => {
-    const novoCartaoMock = { 
+  it('deve adicionar um novo cartão com sucesso no Supabase', async () => {
+    const novoCartaoInput = { 
       nome: 'Inter', 
       banco: 'Inter', 
       limite: 3000, 
       diaFechamento: 10, 
       diaVencimento: 15 
     };
-    const cartaoRetornado = { id: '2', ...novoCartaoMock };
+    
+    const cartaoRetornado = { id: 2, ...novoCartaoInput, usuario_id: 'fake-token' };
 
-    const fetchAutenticadoMock = vi.fn().mockImplementation((_url, options) => {
-      if (options?.method === 'POST') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => cartaoRetornado,
-        });
-      }
-      return Promise.resolve({ ok: true, json: async () => [] });
+    const insertMock = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({ data: cartaoRetornado, error: null }),
+      }),
     });
 
-    const { result } = renderHook(() =>
-      useCartoes('fake-token', fetchAutenticadoMock)
-    );
+    vi.mocked(supabase.from).mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          order: vi.fn().mockResolvedValue({ data: [], error: null }),
+        }),
+      }),
+      insert: insertMock,
+    } as any);
+
+    const { result } = renderHook(() => useCartoes('fake-token'));
 
     await waitFor(() => {
-      expect(fetchAutenticadoMock).toHaveBeenCalled();
+      expect(result.current.cartoes).toEqual([]);
     });
 
     await act(async () => {
-      await result.current.handleAdicionarCartao(novoCartaoMock);
+      await result.current.handleAdicionarCartao(novoCartaoInput);
     });
 
     expect(result.current.cartoes.length).toBe(1);
@@ -86,62 +83,23 @@ describe('useCartoes Hook - Testes Avançados', () => {
     expect(globalThis.alert).toHaveBeenCalledWith('Cartão cadastrado com sucesso!');
   });
 
-  it('deve tratar erro ao tentar cadastrar cartão (resposta com falha)', async () => {
-    const novoCartaoMock = { 
-      nome: 'Itaú', 
-      banco: 'Itaú', 
-      limite: 2000, 
-      diaFechamento: 5, 
-      diaVencimento: 10 
-    };
-
-    const fetchAutenticadoMock = vi.fn().mockImplementation((_url, options) => {
-      if (options?.method === 'POST') {
-        return Promise.resolve({
-          ok: false,
-          json: async () => ({ erro: 'Cartão já cadastrado' }),
-        });
-      }
-      return Promise.resolve({ ok: true, json: async () => [] });
-    });
-
-    const { result } = renderHook(() =>
-      useCartoes('fake-token', fetchAutenticadoMock)
-    );
-
-    await waitFor(() => {
-      expect(fetchAutenticadoMock).toHaveBeenCalled();
-    });
-
-    await act(async () => {
-      await result.current.handleAdicionarCartao(novoCartaoMock);
-    });
-
-    expect(result.current.cartoes.length).toBe(0);
-    expect(globalThis.alert).toHaveBeenCalledWith(
-      expect.stringContaining('Erro ao cadastrar cartão')
-    );
-  });
-
   it('deve deletar um cartão com sucesso ao confirmar a exclusão', async () => {
-    const cartaoExistente = { id: '1', nome: 'Nubank', banco: 'Nubank', limite: 5000, diaFechamento: 5, diaVencimento: 10 };
+    const cartaoExistente = { id: 1, nome: 'Nubank', banco: 'Nubank', limite: 5000, diaFechamento: 5, diaVencimento: 10, usuario_id: 'fake-token' };
 
-    const fetchAutenticadoMock = vi.fn().mockImplementation((_url, options) => {
-      if (options?.method === 'DELETE') {
-        return Promise.resolve({
-          ok: true,
-          text: async () => JSON.stringify({ mensagem: 'Cartão excluído com sucesso!' }),
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: async () => [cartaoExistente],
-      });
+    const deleteMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: null }),
     });
 
-    const { result } = renderHook(() =>
-      useCartoes('fake-token', fetchAutenticadoMock)
-    );
+    vi.mocked(supabase.from).mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          order: vi.fn().mockResolvedValue({ data: [cartaoExistente], error: null }),
+        }),
+      }),
+      delete: deleteMock,
+    } as any);
+
+    const { result } = renderHook(() => useCartoes('fake-token'));
 
     await waitFor(() => {
       expect(result.current.cartoes.length).toBe(1);

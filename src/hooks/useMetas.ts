@@ -1,42 +1,70 @@
 import { useState, useEffect } from "react";
 import type { MetaCategoria } from "../types/meta";
+import { supabase } from "../services/supabaseClient";
 
-export function useMetas(
-  token: string | null,
-  fetchAutenticado: (endpoint: string, options?: RequestInit) => Promise<Response>
-) {
+export function useMetas(token: string | null) {
   const [metas, setMetas] = useState<MetaCategoria[]>([]);
 
   useEffect(() => {
     if (!token) return;
 
-    fetchAutenticado("/metas")
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setMetas(data);
-        }
-      })
-      .catch((err) => console.error("Erro ao carregar metas:", err));
-  }, [token]); // <-- Mantém apenas o token como dependência para evitar loop infinito
+    const carregarMetas = async () => {
+      const { data, error } = await supabase
+        .from("metas_categorias")
+        .select("*")
+        .eq("usuario_id", token); // Correlação com a tabela usuarios
+
+      if (error) {
+        console.error("Erro ao carregar metas:", error);
+      } else if (data) {
+        const metasFormatadas = data.map((m: any) => ({
+          id: String(m.id),
+          categoria: m.categoria,
+          valorMeta: Number(m.valor_meta ?? m.valorMeta),
+          tipo: m.tipo,
+          frequencia: m.frequencia,
+          mes: m.mes,
+        }));
+        setMetas(metasFormatadas);
+      }
+    };
+
+    carregarMetas();
+  }, [token]);
 
   const handleAdicionarMeta = async (novaMeta: Omit<MetaCategoria, "id">) => {
     try {
-      const response = await fetchAutenticado("/metas", {
-        method: "POST",
-        body: JSON.stringify(novaMeta),
-      });
+      const payload = {
+        categoria: novaMeta.categoria,
+        valor_meta: novaMeta.valorMeta,
+        tipo: novaMeta.tipo,
+        frequencia: novaMeta.frequencia,
+        mes: novaMeta.mes,
+        usuario_id: token, // Associa à tabela usuarios
+      };
 
-      const data = await response.json();
+      const { data, error } = await supabase
+        .from("metas_categorias")
+        .insert([payload])
+        .select()
+        .single();
 
-      if (!response.ok) {
-        alert(
-          `Erro ao cadastrar meta: ${data.mensagem || "Falha no servidor"}`
-        );
+      if (error) {
+        alert(`Erro ao cadastrar meta: ${error.message}`);
         return;
       }
 
-      setMetas((prev) => [...prev, data]);
+      if (data) {
+        const metaCriada: MetaCategoria = {
+          id: String(data.id),
+          categoria: data.categoria,
+          valorMeta: Number(data.valor_meta ?? data.valorMeta),
+          tipo: data.tipo,
+          frequencia: data.frequencia,
+          mes: data.mes,
+        };
+        setMetas((prev) => [...prev, metaCriada]);
+      }
     } catch (err) {
       console.error("Erro ao salvar meta:", err);
     }
@@ -44,15 +72,15 @@ export function useMetas(
 
   const handleDeletarMeta = async (id: string) => {
     try {
-      const response = await fetchAutenticado(`/metas/${id}`, {
-        method: "DELETE",
-      });
+      const { error } = await supabase
+        .from("metas_categorias")
+        .delete()
+        .eq("id", id);
 
-      if (response.ok) {
-        setMetas((prev) => prev.filter((m) => m.id !== id));
+      if (error) {
+        alert(error.message || "Erro ao excluir meta.");
       } else {
-        const data = await response.json();
-        alert(data.mensagem || "Erro ao excluir meta.");
+        setMetas((prev) => prev.filter((m) => m.id !== id));
       }
     } catch (err) {
       console.error("Erro ao deletar meta:", err);

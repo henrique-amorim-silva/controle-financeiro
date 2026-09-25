@@ -1,47 +1,58 @@
 import { useState, useEffect } from "react";
 import type { CartaoCredito } from "../types/cartao";
+import { supabase } from "../services/supabaseClient";
 
-export function useCartoes(
-  token: string | null,
-  fetchAutenticado: (endpoint: string, options?: RequestInit) => Promise<Response>
-) {
+export function useCartoes(token: string | null) {
   const [cartoes, setCartoes] = useState<CartaoCredito[]>([]);
 
   useEffect(() => {
     if (!token) return;
 
-    fetchAutenticado("/cartoes")
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setCartoes(data);
-        }
-      })
-      .catch((err) => console.error("Erro ao carregar cartões:", err));
-  }, [token, fetchAutenticado]);
+    const carregarCartoes = async () => {
+      const { data, error } = await supabase
+        .from("cartoes") // Alterado de "cartoes_credito" para "cartoes"
+        .select("*")
+        .eq("usuario_id", token) // Ajustado para "usuario_id" conforme o esquema do banco
+        .order("nome", { ascending: true });
+
+      if (error) {
+        console.error("Erro ao carregar cartões:", error);
+      } else if (data) {
+        setCartoes(data as CartaoCredito[]);
+      }
+    };
+
+    carregarCartoes();
+  }, [token]);
 
   const handleAdicionarCartao = async (
-    novoCartao: Omit<CartaoCredito, "id">
+    novoCartao: Omit<CartaoCredito, "id">,
   ) => {
     try {
-      const response = await fetchAutenticado("/cartoes", {
-        method: "POST",
-        body: JSON.stringify(novoCartao),
-      });
+      const payload = {
+        nome: novoCartao.nome,
+        banco: novoCartao.banco,
+        limite: novoCartao.limite,
+        dia_fechamento: novoCartao.diaFechamento, // Mapeia para o nome correto da coluna
+        dia_vencimento: novoCartao.diaVencimento, // Mapeia para o nome correto da coluna
+        usuario_id: token,
+      };
 
-      const data = await response.json();
+      const { data, error } = await supabase
+        .from("cartoes") // Alterado de "cartoes_credito" para "cartoes"
+        .insert([payload])
+        .select()
+        .single();
 
-      if (!response.ok) {
-        alert(
-          `Erro ao cadastrar cartão: ${
-            data.erro || data.mensagem || "Falha no servidor"
-          }`
-        );
+      if (error) {
+        alert(`Erro ao cadastrar cartão: ${error.message}`);
         return;
       }
 
-      setCartoes((prev) => [...prev, data]);
-      alert("Cartão cadastrado com sucesso!");
+      if (data) {
+        setCartoes((prev) => [...prev, data as CartaoCredito]);
+        alert("Cartão cadastrado com sucesso!");
+      }
     } catch (err) {
       console.error("Erro ao salvar cartão:", err);
     }
@@ -51,32 +62,21 @@ export function useCartoes(
     if (!window.confirm("Tem certeza que deseja excluir este cartão?")) return;
 
     try {
-      const response = await fetchAutenticado(`/cartoes/${id}`, {
-        method: "DELETE",
-      });
+      const { error } = await supabase
+        .from("cartoes") // Alterado de "cartoes_credito" para "cartoes"
+        .delete()
+        .eq("id", id);
 
-      const rawText = await response.text();
-      let data: Record<string, unknown> = {};
-
-      try {
-        data = rawText ? (JSON.parse(rawText) as Record<string, unknown>) : {};
-      } catch {
-        throw new Error(
-          `Servidor retornou erro (${response.status}). Certifique-se de ter reiniciado o backend para carregar a rota DELETE.`
-        );
-      }
-
-      if (!response.ok) {
-        alert(String(data.mensagem || "Não foi possível excluir o cartão."));
+      if (error) {
+        alert(`Não foi possível excluir o cartão: ${error.message}`);
         return;
       }
 
       setCartoes((prev) => prev.filter((c) => Number(c.id) !== id));
-      alert(String(data.mensagem || "Cartão excluído com sucesso!"));
+      alert("Cartão excluído com sucesso!");
     } catch (err: unknown) {
       console.error("Erro ao excluir cartão:", err);
-      const mensagemErro = err instanceof Error ? err.message : "Erro de conexão ao tentar excluir o cartão.";
-      alert(mensagemErro);
+      alert("Erro de conexão ao tentar excluir o cartão.");
     }
   };
 

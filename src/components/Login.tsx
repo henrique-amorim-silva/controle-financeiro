@@ -1,7 +1,17 @@
 import React, { useState } from 'react';
+import { supabase } from '../services/supabaseClient';
 
 interface LoginProps {
   onLoginSucesso: (token: string, usuario: { nome: string; email: string }) => void;
+}
+
+// Função auxiliar para transformar a senha em hash SHA-256 (hexadecimal)
+async function gerarHashSenha(senha: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const dados = encoder.encode(senha);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', dados);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 export const Login: React.FC<LoginProps> = ({ onLoginSucesso }) => {
@@ -11,46 +21,84 @@ export const Login: React.FC<LoginProps> = ({ onLoginSucesso }) => {
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
 
-  const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-  const API_URL = (rawUrl.startsWith('http://') || rawUrl.startsWith('https://') 
-    ? rawUrl 
-    : `https://${rawUrl}`).replace(/\/$/, "");
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro('');
 
-    const endpoint = modoCadastro ? '/auth/register' : '/auth/login';
-    const body = modoCadastro ? { nome, email, senha } : { email, senha };
-
     try {
-      const res = await fetch(`${API_URL}${endpoint}`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true'
-        },
-        body: JSON.stringify(body),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setErro(data.mensagem || 'Erro ao processar requisição.');
-        return;
-      }
+      const senhaHash = await gerarHashSenha(senha);
 
       if (modoCadastro) {
+        // Verifica se o e-mail já existe
+        const { data: usuarioExistente } = await supabase
+          .from('usuarios')
+          .select('id')
+          .eq('email', email)
+          .maybeSingle();
+
+        if (usuarioExistente) {
+          throw new Error('Este e-mail já está cadastrado.');
+        }
+
+        // Insere o novo usuário salvando o hash na coluna 'senha_hash'
+        const { error: erroInsercao } = await supabase
+          .from('usuarios')
+          .insert([{ nome, email, senha_hash: senhaHash }])
+          .select()
+          .single();
+
+        if (erroInsercao) throw erroInsercao;
+
         alert('Conta criada com sucesso! Faça login para continuar.');
         setModoCadastro(false);
         setSenha('');
       } else {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('usuario', JSON.stringify(data.usuario));
-        onLoginSucesso(data.token, data.usuario);
+        // Busca o usuário pelo e-mail
+        const { data: usuario, error } = await supabase
+          .from('usuarios')
+          .select('*')
+          .eq('email', email)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (!usuario) {
+          throw new Error('E-mail ou senha incorretos.');
+        }
+
+        let senhaValida = false;
+
+        // 1. Verifica se a senha digitada confere com o novo hash seguro
+        if (usuario.senha_hash === senhaHash) {
+          senhaValida = true;
+        } 
+        // 2. Migração automática: se não bateu o hash, verifica se bate com a senha antiga em texto plano
+        else if (usuario.senha_hash === senha) {
+          senhaValida = true;
+          // Atualiza automaticamente o banco para o novo hash seguro sem alterar os dados/lançamentos
+          await supabase
+            .from('usuarios')
+            .update({ senha_hash: senhaHash })
+            .eq('id', usuario.id);
+        }
+
+        if (!senhaValida) {
+          throw new Error('E-mail ou senha incorretos.');
+        }
+
+        // Utiliza o ID do usuário como referência de sessão
+        const token = String(usuario.id);
+        const dadosUsuario = {
+          nome: usuario.nome || email.split('@')[0],
+          email: usuario.email || email,
+        };
+
+        localStorage.setItem('token', token);
+        localStorage.setItem('usuario', JSON.stringify(dadosUsuario));
+        onLoginSucesso(token, dadosUsuario);
       }
-    } catch (_err) {
-      setErro('Erro de conexão com o servidor.');
+    } catch (err: any) {
+      setErro(err.message || 'Erro ao processar requisição.');
     }
   };
 
