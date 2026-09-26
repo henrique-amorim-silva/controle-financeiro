@@ -259,7 +259,7 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
   return (
     <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 mb-6 shadow-md shadow-slate-950/30">
       <div className="mb-5 border-b border-slate-800 pb-4 flex items-center justify-between">
-        <h3 className="text-base font-semibold text-white">
+        <h3 className="text-base font-semibold text-slate-100">
           {transacaoEmEdicao ? "Editar Transação" : "Nova Transação"}
         </h3>
         {transacaoEmEdicao && (
@@ -504,7 +504,7 @@ export const FormularioTransacao: React.FC<FormularioTransacaoProps> = ({
             value={data}
             onChange={(e) => setData(e.target.value)}
             required
-            className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 [&::-webkit-calendar-picker-indicator]:invert"
+            className="w-full bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>
 

@@ -48,7 +48,7 @@ export const FiltrosTransacao: React.FC<FiltrosProps> = ({
         className="w-full p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800/50 transition-colors select-none"
       >
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-white">
+          <span className="text-sm font-semibold text-slate-100">
             Filtros Avançados
           </span>
           {temFiltroAtivo && (

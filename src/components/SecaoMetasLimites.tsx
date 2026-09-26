@@ -114,7 +114,7 @@ export function SecaoMetasLimites({
         <div>
           <div className="flex items-center gap-2">
             <Target className="w-5 h-5 text-emerald-400" />
-            <h2 className="text-lg font-bold text-white">Metas e Limites por Categoria</h2>
+            <h2 className="text-lg font-bold text-slate-100">Metas e Limites por Categoria</h2>
           </div>
           <p className="text-xs text-slate-400 mt-1">
             Defina seus gastos e metas de investimento mensais
@@ -139,7 +139,7 @@ export function SecaoMetasLimites({
               value={categoriaSel}
               onChange={(e) => setCategoriaSel(e.target.value)}
               required
-              className="w-full bg-slate-900 border border-slate-700 text-white text-xs rounded-lg p-2.5 outline-none focus:border-emerald-500"
+              className="w-full bg-slate-900 border border-slate-700 text-slate-100 text-xs rounded-lg p-2.5 outline-none focus:border-blue-500"
             >
               <option value="">Selecione...</option>
               {categoriasDespesaDisponiveis.map((cat) => (
@@ -155,7 +155,7 @@ export function SecaoMetasLimites({
             <select
               value={tipo}
               onChange={(e) => setTipo(e.target.value as MetaCategoria["tipo"])}
-              className="w-full bg-slate-900 border border-slate-700 text-white text-xs rounded-lg p-2.5 outline-none focus:border-emerald-500"
+              className="w-full bg-slate-900 border border-slate-700 text-slate-100 text-xs rounded-lg p-2.5 outline-none focus:border-blue-500"
             >
               <option value="limite_gasto">Limite de Gasto (Despesa)</option>
               <option value="meta_investimento">Meta de Investimento (Aporte)</option>
@@ -170,7 +170,7 @@ export function SecaoMetasLimites({
               value={valorMeta}
               onChange={(e) => handleValorChange(e.target.value)}
               required
-              className="w-full bg-slate-900 border border-slate-700 text-white text-xs rounded-lg p-2.5 outline-none focus:border-emerald-500"
+              className="w-full bg-slate-900 border border-slate-700 text-slate-100 text-xs rounded-lg p-2.5 outline-none focus:border-blue-500"
             />
           </div>
 
@@ -179,7 +179,7 @@ export function SecaoMetasLimites({
             <select
               value={frequencia}
               onChange={(e) => setFrequencia(e.target.value as MetaCategoria["frequencia"])}
-              className="w-full bg-slate-900 border border-slate-700 text-white text-xs rounded-lg p-2.5 outline-none focus:border-emerald-500"
+              className="w-full bg-slate-900 border border-slate-700 text-slate-100 text-xs rounded-lg p-2.5 outline-none focus:border-blue-500"
             >
               <option value="fixo">Recorrente (Todo mês)</option>
               <option value="mensal">Apenas Mês Atual ({mesAtual})</option>
@@ -239,14 +239,14 @@ export function SecaoMetasLimites({
             } else {
               // meta_investimento
               if (ultrapassouOuAtingiu) {
-                corBorda = "border-emerald-500/50 bg-emerald-950/10";
-                corTextoStatus = "text-emerald-400";
-                corBarra = "bg-emerald-500";
+                corBorda = "border-blue-500/50 bg-blue-950/10";
+                corTextoStatus = "text-blue-400";
+                corBarra = "bg-blue-500";
                 IconeStatus = CheckCircle2;
               } else {
-                corBorda = "border-amber-500/30 bg-slate-900/50";
-                corTextoStatus = "text-amber-400";
-                corBarra = "bg-amber-500";
+                corBorda = "border-blue-500/30 bg-slate-900/50";
+                corTextoStatus = "text-blue-400";
+                corBarra = "bg-blue-500";
                 IconeStatus = TrendingUp;
               }
             }
@@ -263,12 +263,12 @@ export function SecaoMetasLimites({
                         <IconeCategoria className="w-5 h-5" />
                       </div>
                       <div>
-                        <h3 className="text-sm font-semibold text-white">{meta.categoria}</h3>
+                        <h3 className="text-sm font-semibold text-slate-100">{meta.categoria}</h3>
                         <span className="text-[10px] uppercase font-medium tracking-wider text-slate-400 flex items-center gap-1">
                           {meta.tipo === "limite_gasto" ? (
                             <span className="text-rose-400 flex items-center gap-1"><TrendingDown className="w-3 h-3" /> Limite Gasto</span>
                           ) : (
-                            <span className="text-emerald-400 flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Meta Aporte</span>
+                            <span className="text-blue-400 flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Meta Aporte</span>
                           )}
                           • {meta.frequencia}
                         </span>
@@ -287,7 +287,7 @@ export function SecaoMetasLimites({
                   {/* Detalhes Financeiros */}
                   <div className="flex justify-between items-baseline mb-2">
                     <span className="text-xs text-slate-400">
-                      Realizado: <strong className="text-white">R$ {realizacao.toFixed(2)}</strong>
+                      Realizado: <strong className="text-slate-100">R$ {realizacao.toFixed(2)}</strong>
                     </span>
                     <span className="text-xs font-semibold text-slate-300">
                       Meta: R$ {meta.valorMeta.toFixed(2)}

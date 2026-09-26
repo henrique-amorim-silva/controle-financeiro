@@ -36,7 +36,7 @@ export const AcoesRapidas: React.FC<AcoesRapidasProps> = ({
   return (
     <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 mb-6 shadow-md shadow-slate-950/30 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
       <div>
-        <h4 className="text-sm font-semibold text-white">Ações Rápidas</h4>
+        <h4 className="text-sm font-semibold text-slate-100">Ações Rápidas</h4>
         <p className="text-xs text-slate-400">
           Agilize o preenchimento de lançamentos e gestão de faturas.
         </p>

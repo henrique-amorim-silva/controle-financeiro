@@ -146,8 +146,8 @@ export const DashboardResumo: React.FC<DashboardResumoProps> = ({
           titulo="Investimentos"
           valor={totalInvestimentos}
           icon= {PiggyBank}
-          corTexto="text-cyan-400"
-          corIconeBg="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
+          corTexto="text-blue-400"
+          corIconeBg="bg-blue-500/10 text-blue-400 border border-blue-500/20"
         />
 
         <div className="relative">

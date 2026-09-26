@@ -251,7 +251,7 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
         className="w-full p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800/50 transition-colors select-none"
       >
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-white">
+          <span className="text-sm font-semibold text-slate-100">
             Análise Gráfica
           </span>
           <span className="text-xs text-slate-400 font-normal hidden sm:inline">
@@ -367,10 +367,10 @@ export const SecaoGraficos: React.FC<SecaoGraficosProps> = ({ transacoes }) => {
                         ];
                       }}
                       contentStyle={{
-                        backgroundColor: "#020617",
-                        borderColor: "#334155",
+                        backgroundColor: "#f6f9fc",
+                        borderColor: "#91abc1",
                         borderRadius: "0.75rem",
-                        color: "#f8fafc",
+                        color: "#1e293b",
                         fontSize: "12px",
                       }}
                     />

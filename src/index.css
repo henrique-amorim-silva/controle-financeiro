@@ -1,7 +1,51 @@
 @import "tailwindcss";
 
+@theme {
+  --color-slate-50: #0f172a;
+  --color-slate-100: #1e293b;
+  --color-slate-200: #334155;
+  --color-slate-300: #475569;
+  --color-slate-400: #52657b;
+  --color-slate-500: #5e748a;
+  --color-slate-600: #6b8095;
+  --color-slate-700: #82a4c0;
+  --color-slate-800: #a9c4dc;
+  --color-slate-900: #e7eff5;
+  --color-slate-950: #f6f9fc;
+  --color-brand-navy: #071d44;
+  --color-brand-blue: #0b6fe9;
+  --color-brand-cyan: #08c8ca;
+  --color-emerald-300: #166534;
+  --color-emerald-400: #15803d;
+  --color-emerald-500: #16a34a;
+  --color-emerald-600: #15803d;
+  --color-rose-300: #9f1239;
+  --color-rose-400: #be123c;
+  --color-rose-500: #e11d48;
+  --color-rose-600: #be123c;
+  --color-blue-300: #1e40af;
+  --color-blue-400: #1d4ed8;
+  --color-blue-500: #2563eb;
+  --color-blue-600: #1d4ed8;
+  --color-cyan-300: #155e75;
+  --color-cyan-400: #0e7490;
+  --color-cyan-500: #0891b2;
+  --color-amber-300: #92400e;
+  --color-amber-400: #a16207;
+  --color-amber-500: #d97706;
+  --color-indigo-300: #4338ca;
+  --color-indigo-400: #4f46e5;
+}
+
 @layer base {
   body {
     @apply bg-slate-950 text-slate-100 transition-colors duration-200;
+    background-image: radial-gradient(ellipse at 50% -28%, rgb(59 130 246 / 0.08), transparent 58%);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    color: #1e293b;
+    background-color: #bfdbfe;
   }
 }

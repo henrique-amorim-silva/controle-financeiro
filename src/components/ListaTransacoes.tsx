@@ -127,8 +127,8 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
                       <span
                         className={`px-2 py-0.5 rounded-lg border text-[10px] font-medium capitalize ${
                           tipoGastoValor.includes("fixo")
-                            ? "bg-blue-500/10 text-blue-400 border-blue-500/30"
-                            : "bg-purple-500/10 text-purple-400 border-purple-500/30"
+                            ? "bg-slate-800/80 text-slate-300 border-slate-600"
+                            : "bg-amber-500/10 text-amber-300 border-amber-500/30"
                         }`}
                       >
                         {tipoGastoValor.includes("fixo") ? "Fixo" : "Variável"}
@@ -172,6 +172,8 @@ export const ListaTransacoes: React.FC<ListaTransacoesProps> = ({
                     className={`p-3 text-right font-semibold whitespace-nowrap ${
                       isTransferencia
                         ? "text-cyan-400"
+                        : t.categoria === "Investimentos"
+                        ? "text-blue-400"
                         : t.tipo === "receita"
                         ? "text-emerald-400"
                         : "text-rose-400"

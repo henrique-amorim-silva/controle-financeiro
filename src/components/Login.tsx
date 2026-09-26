@@ -103,13 +103,18 @@ export const Login: React.FC<LoginProps> = ({ onLoginSucesso }) => {
   };
 
   return (
-    <div style={{ maxWidth: '380px', margin: '60px auto', padding: '24px', border: '1px solid #334155', borderRadius: '8px', backgroundColor: '#0f172a', boxShadow: '0 4px 14px rgba(15,23,42,0.7)', fontFamily: 'sans-serif', color: '#e2e8f0' }}>
-      <h2 style={{ textAlign: 'center', marginBottom: '20px', color: '#f8fafc' }}>
+    <div style={{ maxWidth: '380px', margin: '60px auto', padding: '24px', border: '1px solid #93c5fd', borderRadius: '8px', backgroundColor: '#ffffff', boxShadow: '0 4px 14px rgba(30,64,175,0.1)', fontFamily: 'sans-serif', color: '#1e293b' }}>
+      <img
+        src="/F.svg"
+        alt="Logo do Controle Financeiro"
+        style={{ display: 'block', width: '56px', height: '56px', objectFit: 'contain', margin: '0 auto 12px' }}
+      />
+      <h2 style={{ textAlign: 'center', marginBottom: '20px', color: '#1e293b' }}>
         {modoCadastro ? 'Criar Conta' : 'Controle Financeiro'}
       </h2>
 
       {erro && (
-        <div style={{ background: '#7f1d1d', color: '#fee2e2', padding: '10px', borderRadius: '4px', marginBottom: '15px', fontSize: '14px' }}>
+        <div style={{ background: '#ffe4e6', color: '#9f1239', padding: '10px', borderRadius: '4px', marginBottom: '15px', fontSize: '14px' }}>
           {erro}
         </div>
       )}
@@ -117,42 +122,42 @@ export const Login: React.FC<LoginProps> = ({ onLoginSucesso }) => {
       <form onSubmit={handleSubmit}>
         {modoCadastro && (
           <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', color: '#cbd5e1' }}>Nome:</label>
+            <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', color: '#475569' }}>Nome:</label>
             <input
               type="text"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               required
-              style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #475569', backgroundColor: '#0f172a', color: '#e2e8f0', boxSizing: 'border-box' }}
+              style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #93c5fd', backgroundColor: '#f8fafc', color: '#1e293b', boxSizing: 'border-box' }}
             />
           </div>
         )}
 
         <div style={{ marginBottom: '12px' }}>
-          <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', color: '#cbd5e1' }}>E-mail:</label>
+          <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', color: '#475569' }}>E-mail:</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #475569', backgroundColor: '#0f172a', color: '#e2e8f0', boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #93c5fd', backgroundColor: '#f8fafc', color: '#1e293b', boxSizing: 'border-box' }}
           />
         </div>
 
         <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', color: '#cbd5e1' }}>Senha:</label>
+          <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', color: '#475569' }}>Senha:</label>
           <input
             type="password"
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
             required
-            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #475569', backgroundColor: '#0f172a', color: '#e2e8f0', boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #93c5fd', backgroundColor: '#f8fafc', color: '#1e293b', boxSizing: 'border-box' }}
           />
         </div>
 
         <button
           type="submit"
-          style={{ width: '100%', padding: '10px', backgroundColor: '#16a34a', color: '#f8fafc', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+          style={{ width: '100%', padding: '10px', backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
         >
           {modoCadastro ? 'Cadastrar' : 'Entrar'}
         </button>
@@ -161,7 +166,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSucesso }) => {
       <p
         role="button"
         tabIndex={0}
-        style={{ marginTop: '16px', textAlign: 'center', cursor: 'pointer', color: '#7dd3fc', fontSize: '14px' }}
+        style={{ marginTop: '16px', textAlign: 'center', cursor: 'pointer', color: '#1d4ed8', fontSize: '14px' }}
         onClick={() => { setModoCadastro(!modoCadastro); setErro(''); }}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {

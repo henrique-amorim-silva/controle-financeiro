@@ -1,5 +1,4 @@
 import React from 'react';
-import { Wallet } from 'lucide-react';
 
 interface HeaderProps {
   mesFiltro: string; // Ex: "2026-09"
@@ -22,27 +21,27 @@ export const Header: React.FC<HeaderProps> = ({ mesFiltro }) => {
   };
 
   return (
-    <header className="bg-slate-950 border-b border-slate-800 text-slate-100 py-6 px-4 shadow-sm shadow-slate-950/20">
+    <header className="bg-brand-navy border-b border-brand-blue/30 text-white py-6 px-4 shadow-sm shadow-brand-navy/20">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Logotipo e Título */}
         <div className="flex items-center gap-3">
-          <div className="bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-            <Wallet className="w-7 h-7" />
+          <div className="bg-brand-blue/15 p-2.5 rounded-xl border border-brand-cyan/30">
+            <img src="/F.svg" alt="Logo do FinanceApp" className="w-7 h-7 object-contain" />
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight">
-              FinanceApp <span className="text-emerald-600 dark:text-emerald-400 font-normal">| Controle Pessoal</span>
+              FinanceApp <span className="text-brand-cyan font-normal">| Controle Pessoal</span>
             </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-white/65">
               Gestão de Receitas, Despesas e Investimentos
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-slate-900/80 px-4 py-2 rounded-xl border border-slate-700 text-sm text-slate-300">
+          <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl border border-white/20 text-sm text-white/80">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-slate-200">
+            <span className="text-white">
               Período Ativo: <strong>{formatarMesAno(mesFiltro)}</strong>
             </span>
           </div>

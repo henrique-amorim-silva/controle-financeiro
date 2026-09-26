@@ -84,52 +84,52 @@ export const AlterarSenha: React.FC<AlterarSenhaProps> = ({ token }) => {
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: '30px auto', padding: '24px', border: '1px solid #334155', borderRadius: '8px', backgroundColor: '#0f172a', boxShadow: '0 4px 14px rgba(15,23,42,0.7)', fontFamily: 'sans-serif', color: '#e2e8f0' }}>
-      <h3 style={{ marginBottom: '16px', color: '#f8fafc', textAlign: 'center' }}>Alterar Senha</h3>
+    <div style={{ maxWidth: '400px', margin: '30px auto', padding: '24px', border: '1px solid #93c5fd', borderRadius: '8px', backgroundColor: '#ffffff', boxShadow: '0 4px 14px rgba(30,64,175,0.1)', fontFamily: 'sans-serif', color: '#1e293b' }}>
+      <h3 style={{ marginBottom: '16px', color: '#1e293b', textAlign: 'center' }}>Alterar Senha</h3>
 
       {mensagem.texto && (
-        <div style={{ padding: '10px', borderRadius: '4px', marginBottom: '15px', fontSize: '14px', backgroundColor: mensagem.tipo === 'sucesso' ? '#065f46' : '#7f1d1d', color: '#fee2e2' }}>
+        <div style={{ padding: '10px', borderRadius: '4px', marginBottom: '15px', fontSize: '14px', backgroundColor: mensagem.tipo === 'sucesso' ? '#dcfce7' : '#ffe4e6', color: mensagem.tipo === 'sucesso' ? '#166534' : '#9f1239' }}>
           {mensagem.texto}
         </div>
       )}
 
       <form onSubmit={handleAlterarSenha}>
         <div style={{ marginBottom: '12px' }}>
-          <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', color: '#cbd5e1' }}>Senha Atual (ou 123456):</label>
+          <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', color: '#475569' }}>Senha Atual (ou 123456):</label>
           <input
             type="password"
             value={senhaAtual}
             onChange={(e) => setSenhaAtual(e.target.value)}
             required
-            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #475569', backgroundColor: '#0f172a', color: '#e2e8f0', boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #93c5fd', backgroundColor: '#f8fafc', color: '#1e293b', boxSizing: 'border-box' }}
           />
         </div>
 
         <div style={{ marginBottom: '12px' }}>
-          <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', color: '#cbd5e1' }}>Nova Senha:</label>
+          <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', color: '#475569' }}>Nova Senha:</label>
           <input
             type="password"
             value={novaSenha}
             onChange={(e) => setNovaSenha(e.target.value)}
             required
-            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #475569', backgroundColor: '#0f172a', color: '#e2e8f0', boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #93c5fd', backgroundColor: '#f8fafc', color: '#1e293b', boxSizing: 'border-box' }}
           />
         </div>
 
         <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', color: '#cbd5e1' }}>Confirmar Nova Senha:</label>
+          <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', color: '#475569' }}>Confirmar Nova Senha:</label>
           <input
             type="password"
             value={confirmarSenha}
             onChange={(e) => setConfirmarSenha(e.target.value)}
             required
-            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #475569', backgroundColor: '#0f172a', color: '#e2e8f0', boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #93c5fd', backgroundColor: '#f8fafc', color: '#1e293b', boxSizing: 'border-box' }}
           />
         </div>
 
         <button
           type="submit"
-          style={{ width: '100%', padding: '10px', backgroundColor: '#16a34a', color: '#f8fafc', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+          style={{ width: '100%', padding: '10px', backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
         >
           Atualizar Senha
         </button>

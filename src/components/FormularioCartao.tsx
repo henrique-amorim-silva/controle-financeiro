@@ -70,7 +70,7 @@ export const FormularioCartao: React.FC<FormularioCartaoProps> = ({
         className="w-full p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800/50 transition-colors select-none"
       >
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-white">
+          <span className="text-sm font-semibold text-slate-100">
             Cadastrar Novo Cartão
           </span>
           <span className="text-xs text-slate-400 font-normal hidden sm:inline">
@@ -175,7 +175,7 @@ export const FormularioCartao: React.FC<FormularioCartaoProps> = ({
                     className="bg-slate-950 border border-slate-800 p-3 rounded-lg flex items-center justify-between"
                   >
                     <div>
-                      <p className="text-sm font-medium text-white">{cartao.nome}</p>
+                      <p className="text-sm font-medium text-slate-100">{cartao.nome}</p>
                       <p className="text-xs text-slate-400">
                         {cartao.banco} | Fecha dia: {cartao.diaFechamento} | Vence dia: {cartao.diaVencimento} | Limite: R$ {Number(cartao.limite).toFixed(2)}
                       </p>

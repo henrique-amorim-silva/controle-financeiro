@@ -89,7 +89,7 @@ export default function App() {
 
         <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md shadow-slate-950/20">
           <div>
-            <h2 className="text-sm font-semibold text-white">
+            <h2 className="text-sm font-semibold text-slate-100">
               Métricas Gerais por Mês
             </h2>
             <p className="text-xs text-slate-400">
@@ -101,7 +101,7 @@ export default function App() {
               type="month"
               value={mesFiltro}
               onChange={(e) => setMesFiltro(e.target.value)}
-              className="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-xl px-3 py-2 focus:ring-2 focus:ring-emerald-500 outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert"
+              className="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-xl px-3 py-2 focus:ring-2 focus:ring-emerald-500 outline-none cursor-pointer"
             />
             {mesFiltro && (
               <button
