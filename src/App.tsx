@@ -22,6 +22,9 @@ export default function App() {
   const { token, usuario, handleLogout, handleLoginSucesso } = useAuth();
   const [mostrarAlterarSenha, setMostrarAlterarSenha] = useState(false);
 
+  // Carrega os cartões primeiro para passá-los para o hook de transações
+  const { cartoes, handleAdicionarCartao, handleDeletarCartao } = useCartoes(token);
+
   const {
     transacoes,
     transacaoEmEdicao,
@@ -43,9 +46,7 @@ export default function App() {
     handleAlternarPago,
     handlePagarFaturaLote,
     handleDuplicarGastosFixos,
-  } = useTransacoes(token);
-
-  const { cartoes, handleAdicionarCartao, handleDeletarCartao } = useCartoes(token);
+  } = useTransacoes(token, cartoes);
 
   const { metas, handleAdicionarMeta, handleDeletarMeta } = useMetas(token);
 

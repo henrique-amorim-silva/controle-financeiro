@@ -4,17 +4,108 @@ import type { FiltrosState } from "../components/FiltrosTransacao";
 import { supabase } from "../services/supabaseClient";
 
 const normalizarTexto = (texto: string) =>
-  texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 
-export function useTransacoes(token: string | null) {
+export function useTransacoes(token: string | null, cartoes: any[] = []) {
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
-  const [transacaoEmEdicao, setTransacaoEmEdicao] = useState<Transacao | null>(null);
+  const [transacaoEmEdicao, setTransacaoEmEdicao] = useState<Transacao | null>(
+    null,
+  );
   const [mesFiltro, setMesFiltro] = useState<string>(() => {
     const agora = new Date();
     const ano = agora.getFullYear();
-    const mes = String(agora.getMonth() + 1).padStart(2, '0');
+    const mes = String(agora.getMonth() + 1).padStart(2, "0");
     return `${ano}-${mes}`;
   });
+
+  const formatarDataParaIso = (dataInput: any): string => {
+    if (!dataInput) return new Date().toISOString().split("T")[0];
+    const str = String(dataInput).trim();
+    
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+      return str;
+    }
+
+    if (str.includes("/")) {
+      const partes = str.split("/");
+      if (partes.length === 3) {
+        const d = partes[0].padStart(2, "0");
+        const m = partes[1].padStart(2, "0");
+        const a = partes[2];
+        if (a && m && d && !isNaN(Number(a)) && !isNaN(Number(m)) && !isNaN(Number(d))) {
+          return `${a}-${m}-${d}`;
+        }
+      }
+    }
+
+    return new Date().toISOString().split("T")[0];
+  };
+
+  // Lógica inteligente de parcelas: usa o fechamento para definir o mês base 
+  // e grava obrigatoriamente a data com o dia de VENCIMENTO do cartão.
+  const calcularDataComParcelas = (
+    dataInput: any,
+    descricao: string,
+    cartaoId: string | undefined,
+  ): string => {
+    const dataIso = formatarDataParaIso(dataInput);
+    const [anoStr, mesStr, diaStr] = dataIso.split("-");
+    let ano = Number(anoStr);
+    let mes = Number(mesStr);
+    let diaTransacao = Number(diaStr);
+
+    if (isNaN(ano) || isNaN(mes) || isNaN(diaTransacao)) {
+      return dataIso;
+    }
+
+    // Extrai a parcela atual da descrição (ex: "teste (1/4)" -> 1)
+    let parcelaAtual = 1;
+    const matchParcela = descricao?.match(/\((\d+)\/\d+\)/);
+    if (matchParcela && matchParcela[1]) {
+      parcelaAtual = Number(matchParcela[1]);
+    }
+
+    let diaFechamento = 10;
+    let diaVencimento = 15;
+
+    if (cartaoId && Array.isArray(cartoes)) {
+      const cartao = cartoes.find((c) => String(c.id) === String(cartaoId));
+      if (cartao) {
+        diaFechamento = Number(cartao.diaFechamento ?? cartao.dia_fechamento ?? cartao.fechamento ?? 10);
+        diaVencimento = Number(cartao.diaVencimento ?? cartao.dia_vencimento ?? cartao.vencimento ?? 15);
+      }
+    }
+
+    let targetAno = ano;
+    let targetMes = mes;
+
+    // Se for cartão, avalia o fechamento para ver se pula para o mês seguinte
+    if (cartaoId) {
+      if (diaTransacao >= diaFechamento) {
+        targetMes += 1;
+      }
+    }
+
+    // O dia a ser gravado será o dia de vencimento se tiver cartão, ou o dia da transação caso contrário
+    let diaAlvo = cartaoId ? diaVencimento : diaTransacao;
+
+    // Avança os meses de acordo com a parcela atual (Parcela 1 = 0 meses extras, Parcela 2 = 1 mês, etc.)
+    const mesesAdicionais = parcelaAtual - 1;
+    targetMes += mesesAdicionais;
+
+    while (targetMes > 12) {
+      targetMes -= 12;
+      targetAno += 1;
+    }
+
+    const ultimoDiaDoMes = new Date(targetAno, targetMes, 0).getDate();
+    const diaFinal = Math.min(diaAlvo, ultimoDiaDoMes);
+
+    return `${targetAno}-${String(targetMes).padStart(2, "0")}-${String(diaFinal).padStart(2, "0")}`;
+  };
 
   const formularioRef = useRef<HTMLDivElement>(null);
 
@@ -30,7 +121,9 @@ export function useTransacoes(token: string | null) {
     dataFim: "",
   });
 
-  const normalizarTransacao = (transacao: Record<string, unknown>): Transacao => {
+  const normalizarTransacao = (
+    transacao: Record<string, unknown>,
+  ): Transacao => {
     const tipoGastoBruto =
       transacao.tipoGasto ?? transacao.tipogasto ?? transacao.tipo_gasto ?? "";
     const metodoPagamentoBruto =
@@ -45,7 +138,9 @@ export function useTransacoes(token: string | null) {
       id: String(transacao.id ?? ""),
       data: String(transacao.data ?? ""),
       cartaoId: cartaoIdBruto ? String(cartaoIdBruto) : undefined,
-      bancoDestino: String(transacao.bancoDestino ?? transacao.banco_destino ?? ""),
+      bancoDestino: String(
+        transacao.bancoDestino ?? transacao.banco_destino ?? "",
+      ),
     };
   };
 
@@ -56,13 +151,17 @@ export function useTransacoes(token: string | null) {
       const { data, error } = await supabase
         .from("transacoes")
         .select("*")
-        .eq("usuario_id", token) // Correlação com a tabela usuarios
+        .eq("usuario_id", token)
         .order("data", { ascending: false });
 
       if (error) {
         console.error("Erro ao carregar transações:", error);
       } else if (data) {
-        setTransacoes(data.map((item) => normalizarTransacao(item as Record<string, unknown>)));
+        setTransacoes(
+          data.map((item) =>
+            normalizarTransacao(item as Record<string, unknown>),
+          ),
+        );
       }
     };
 
@@ -105,7 +204,7 @@ export function useTransacoes(token: string | null) {
         if (t.tipo !== "despesa") return false;
         const tObj = t as unknown as Record<string, unknown>;
         const tipoGastoItem = String(
-          t.tipoGasto ?? tObj.tipogasto ?? tObj.tipo_gasto ?? ""
+          t.tipoGasto ?? tObj.tipogasto ?? tObj.tipo_gasto ?? "",
         )
           .trim()
           .toLowerCase();
@@ -113,7 +212,10 @@ export function useTransacoes(token: string | null) {
         if (filtros.tipoGasto === "fixo" && !tipoGastoItem.includes("fixo")) {
           return false;
         }
-        if (filtros.tipoGasto === "variavel" && tipoGastoItem.includes("fixo")) {
+        if (
+          filtros.tipoGasto === "variavel" &&
+          tipoGastoItem.includes("fixo")
+        ) {
           return false;
         }
       }
@@ -122,7 +224,13 @@ export function useTransacoes(token: string | null) {
       if (filtros.status === "pendente" && t.pago) return false;
 
       if (filtros.metodoPagamento !== "todos") {
-        const metodoItem = (t.metodoPagamento || (t as unknown as Record<string, unknown>).metodo_pagamento || "").toString().toLowerCase();
+        const metodoItem = (
+          t.metodoPagamento ||
+          (t as unknown as Record<string, unknown>).metodo_pagamento ||
+          ""
+        )
+          .toString()
+          .toLowerCase();
         if (!metodoItem.includes(filtros.metodoPagamento.toLowerCase())) {
           return false;
         }
@@ -131,7 +239,7 @@ export function useTransacoes(token: string | null) {
       if (
         filtros.descricao.trim() !== "" &&
         !normalizarTexto(t.descricao).includes(
-          normalizarTexto(filtros.descricao)
+          normalizarTexto(filtros.descricao),
         )
       ) {
         return false;
@@ -161,7 +269,7 @@ export function useTransacoes(token: string | null) {
   };
 
   const handleAdicionarTransacao = async (
-    novaTransacao: Omit<Transacao, "id">
+    novaTransacao: Omit<Transacao, "id">,
   ) => {
     try {
       const payload = {
@@ -173,10 +281,16 @@ export function useTransacoes(token: string | null) {
         banco: novaTransacao.banco,
         banco_destino: novaTransacao.bancoDestino,
         pago: novaTransacao.pago,
-        data: novaTransacao.data,
+        data: calcularDataComParcelas(
+          novaTransacao.data,
+          novaTransacao.descricao,
+          novaTransacao.cartaoId
+        ),
         metodo_pagamento: novaTransacao.metodoPagamento,
-        cartao_id: novaTransacao.cartaoId ? Number(novaTransacao.cartaoId) : null,
-        usuario_id: token, // Associa à tabela usuarios
+        cartao_id: novaTransacao.cartaoId
+          ? Number(novaTransacao.cartaoId)
+          : null,
+        usuario_id: token,
       };
 
       const { data, error } = await supabase
@@ -191,7 +305,10 @@ export function useTransacoes(token: string | null) {
       }
 
       if (data) {
-        setTransacoes((prev) => [normalizarTransacao(data as Record<string, unknown>), ...prev]);
+        setTransacoes((prev) => [
+          normalizarTransacao(data as Record<string, unknown>),
+          ...prev,
+        ]);
       }
     } catch (err) {
       console.error("Erro ao salvar transação:", err);
@@ -200,7 +317,7 @@ export function useTransacoes(token: string | null) {
 
   const handleEditarTransacao = async (
     id: string,
-    transacaoAtualizada: Omit<Transacao, "id">
+    transacaoAtualizada: Omit<Transacao, "id">,
   ) => {
     try {
       const payload = {
@@ -212,9 +329,15 @@ export function useTransacoes(token: string | null) {
         banco: transacaoAtualizada.banco,
         banco_destino: transacaoAtualizada.bancoDestino,
         pago: transacaoAtualizada.pago,
-        data: transacaoAtualizada.data,
+        data: calcularDataComParcelas(
+          transacaoAtualizada.data,
+          transacaoAtualizada.descricao,
+          transacaoAtualizada.cartaoId
+        ),
         metodo_pagamento: transacaoAtualizada.metodoPagamento,
-        cartao_id: transacaoAtualizada.cartaoId ? Number(transacaoAtualizada.cartaoId) : null,
+        cartao_id: transacaoAtualizada.cartaoId
+          ? Number(transacaoAtualizada.cartaoId)
+          : null,
       };
 
       const { data, error } = await supabase
@@ -231,7 +354,11 @@ export function useTransacoes(token: string | null) {
 
       if (data) {
         setTransacoes((prev) =>
-          prev.map((t) => (t.id === id ? normalizarTransacao(data as Record<string, unknown>) : t))
+          prev.map((t) =>
+            t.id === id
+              ? normalizarTransacao(data as Record<string, unknown>)
+              : t,
+          ),
         );
         setTransacaoEmEdicao(null);
       }
@@ -252,10 +379,7 @@ export function useTransacoes(token: string | null) {
 
   const handleDeletarTransacao = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from("transacoes")
-        .delete()
-        .eq("id", id);
+      const { error } = await supabase.from("transacoes").delete().eq("id", id);
 
       if (!error) {
         setTransacoes((prev) => prev.filter((t) => t.id !== id));
@@ -278,8 +402,8 @@ export function useTransacoes(token: string | null) {
       if (!error) {
         setTransacoes((prev) =>
           prev.map((t) =>
-            t.id === transacao.id ? { ...t, pago: novoStatus } : t
-          )
+            t.id === transacao.id ? { ...t, pago: novoStatus } : t,
+          ),
         );
       }
     } catch (err) {
@@ -290,18 +414,31 @@ export function useTransacoes(token: string | null) {
   const handlePagarFaturaLote = async (cartaoIdSelecionado: string) => {
     try {
       const transacoesParaPagar = transacoes.filter((t) => {
-        const transacaoCartaoId = (t.cartaoId || (t as unknown as Record<string, unknown>).cartao_id || "").toString();
+        const transacaoCartaoId = (
+          t.cartaoId ||
+          (t as unknown as Record<string, unknown>).cartao_id ||
+          ""
+        ).toString();
         const matchCartaoId = transacaoCartaoId === cartaoIdSelecionado;
         const matchMes = mesFiltro ? t.data?.startsWith(mesFiltro) : true;
         const ePendente = !t.pago;
-        const metodo = (t.metodoPagamento || (t as unknown as Record<string, unknown>).metodo_pagamento || "").toString().toLowerCase();
-        const ehCartaoCredito = metodo.includes("cartao_credito") || metodo.includes("crédito");
+        const metodo = (
+          t.metodoPagamento ||
+          (t as unknown as Record<string, unknown>).metodo_pagamento ||
+          ""
+        )
+          .toString()
+          .toLowerCase();
+        const ehCartaoCredito =
+          metodo.includes("cartao_credito") || metodo.includes("crédito");
 
         return matchCartaoId && matchMes && ePendente && ehCartaoCredito;
       });
 
       if (transacoesParaPagar.length === 0) {
-        alert(`Não há faturas de cartão de crédito pendentes para este cartão no mês ${mesFiltro || 'selecionado'}.`);
+        alert(
+          `Não há faturas de cartão de crédito pendentes para este cartão no mês ${mesFiltro || "selecionado"}.`,
+        );
         return;
       }
 
@@ -318,7 +455,7 @@ export function useTransacoes(token: string | null) {
       }
 
       setTransacoes((prev) =>
-        prev.map((t) => (ids.includes(t.id) ? { ...t, pago: true } : t))
+        prev.map((t) => (ids.includes(t.id) ? { ...t, pago: true } : t)),
       );
 
       alert(`Fatura de cartão de crédito quitada com sucesso!`);
@@ -359,7 +496,11 @@ export function useTransacoes(token: string | null) {
       return;
     }
 
-    if (!window.confirm(`Deseja importar ${gastosFixosMesAnterior.length} gasto(s) fixo(s) para ${mesFiltro} como PENDENTES?`))
+    if (
+      !window.confirm(
+        `Deseja importar ${gastosFixosMesAnterior.length} gasto(s) fixo(s) para ${mesFiltro} como PENDENTES?`,
+      )
+    )
       return;
 
     try {
