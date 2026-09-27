@@ -25,7 +25,7 @@ export const Header: React.FC<HeaderProps> = ({ mesFiltro }) => {
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Logotipo e Título */}
         <div className="flex items-center gap-3">
-          <div className="bg-brand-blue/15 p-2.5 rounded-xl border border-brand-cyan/30">
+          <div className="bg-slate-950 p-2.5 rounded-full border border-brand-cyan/30">
             <img src="/F.svg" alt="Logo do FinanceApp" className="w-7 h-7 object-contain" />
           </div>
           <div>
