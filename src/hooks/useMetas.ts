@@ -35,6 +35,7 @@ export function useMetas(token: string | null) {
   const handleAdicionarMeta = async (novaMeta: Omit<MetaCategoria, "id">) => {
     try {
       const payload = {
+        id: crypto.randomUUID(), // Gera um ID único compatível com a coluna varchar
         categoria: novaMeta.categoria,
         valor_meta: novaMeta.valorMeta,
         tipo: novaMeta.tipo,
@@ -69,7 +70,6 @@ export function useMetas(token: string | null) {
       console.error("Erro ao salvar meta:", err);
     }
   };
-
   const handleDeletarMeta = async (id: string) => {
     try {
       const { error } = await supabase
